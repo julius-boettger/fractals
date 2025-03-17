@@ -3,4 +3,8 @@ name = "fractals"
 version = "0.0.1"
 edition = "2021"
 
-#[dependencies]
+[dependencies]
+winit = { version = "0.29", features = ["rwh_05"] }
+env_logger = "0.10"
+log = "0.4"
+wgpu = "24.0"
