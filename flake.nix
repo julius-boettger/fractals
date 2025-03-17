@@ -11,29 +11,20 @@
     }));
   in
   {
-    packages = eachSystem (system: pkgs: rec {
-      default = fractals;
-      fractals = pkgs.rustPlatform.buildRustPackage {
-        name = "fractals";
-        src = ./.;
-        cargoLock.lockFile = ./Cargo.lock;
-
-        #nativeBuildInputs = with pkgs; [
-        #  pkg-config # to find buildInputs
-        #];
-        #buildInputs = with pkgs; [];
-      };
-    });
-
     devShells = eachSystem (system: pkgs: {
-      default = let
-        inherit (self.packages.${system}.default) nativeBuildInputs buildInputs;
-      in pkgs.mkShell {
-        buildInputs = buildInputs;
-        nativeBuildInputs = nativeBuildInputs ++ (with pkgs; [
+      default = pkgs.mkShell {
+        # runtime dependencies
+        LD_LIBRARY_PATH = with pkgs; lib.makeLibraryPath [
+          # for winit (https://github.com/rust-windowing/winit/issues/3244)
+          wayland
+          libxkbcommon
+        ];
+
+        nativeBuildInputs = with pkgs; [
           cargo
           cargo-edit # provides `cargo upgrade` for dependencies
-        ]);
+        ];
+
         # fix rust-analyzer in vscode
         RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
       };
