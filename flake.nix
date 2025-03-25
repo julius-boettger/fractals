@@ -18,6 +18,7 @@
           # for winit (https://github.com/rust-windowing/winit/issues/3244)
           wayland
           libxkbcommon
+          # for the wgpu vulkan backend
           vulkan-loader
         ];
 
