@@ -40,12 +40,7 @@ impl<'a> State<'a> {
 
         // actual gpu device and rendering queue
         let (device, queue) = adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                // TODO are these also defaults?
-                required_features: wgpu::Features::empty(),
-                label: None,
-                ..Default::default()
-            },
+            &Default::default(),
             None,
         ).await.unwrap();
 
@@ -71,10 +66,6 @@ impl<'a> State<'a> {
         Self { surface, device, queue, config, size, window }
     }
 
-    fn window(&self) -> &Window {
-        &self.window
-    }
-
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
@@ -84,6 +75,7 @@ impl<'a> State<'a> {
         }
     }
 
+    #[allow(unused_variables)]
     fn input(&mut self, event: &WindowEvent) -> bool {
         false
     }
@@ -99,12 +91,12 @@ impl<'a> State<'a> {
         let view = output.texture.create_view(&Default::default());
 
         // buffer to send commands to the gpu
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
+        let mut encoder = self.device.create_command_encoder(
+            &wgpu::CommandEncoderDescriptor { label: Some("render encoder") }
+        );
 
         encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
+            label: Some("render pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &view,
                 resolve_target: None,
@@ -137,27 +129,33 @@ async fn run() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let mut state = State::new(&window).await;
+
+    // only start rendering once surface is configured
     let mut surface_configured = false;
 
     event_loop.run(move |event, control_flow|
         if let Event::WindowEvent { ref event, window_id } = event {
-            if window_id == state.window().id() && !state.input(&event) {
+            if window_id == state.window.id() && !state.input(&event) {
                 match event {
+
                     WindowEvent::Resized(physical_size) => {
                         println!("resizing with {physical_size:?}");
+                        // this also (re)configures the surface 
                         state.resize(*physical_size);
                         surface_configured = true;
                     }
 
                     WindowEvent::RedrawRequested => {
                         // tell winit that we want another frame after this one
-                        state.window().request_redraw();
+                        state.window.request_redraw();
 
+                        // dont try to render when surface is not configured yet
                         if !surface_configured {
                             return;
                         }
 
                         state.update();
+
                         match state.render() {
                             // frame took to long to present
                             Err(wgpu::SurfaceError::Timeout) =>
