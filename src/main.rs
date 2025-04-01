@@ -13,6 +13,7 @@ struct State<'a> {
     config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
     window: &'a Window,
+    render_pipeline: wgpu::RenderPipeline,
 }
 
 impl<'a> State<'a> {
@@ -31,11 +32,11 @@ impl<'a> State<'a> {
         // handle to chosen gpu
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
             // dont prefer specific low/high power gpu
-            power_preference: Default::default(),
+            power_preference: Default::default(), // TODO: simplify default?
             // needs to be able to draw on the surface
             compatible_surface: Some(&surface),
             // use software rendering
-            force_fallback_adapter: false,
+            force_fallback_adapter: false, // TODO: simplify default?
         }).await.unwrap();
 
         // actual gpu device and rendering queue
@@ -63,7 +64,55 @@ impl<'a> State<'a> {
             desired_maximum_frame_latency: 2,
         };
 
-        Self { surface, device, queue, config, size, window }
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("render pipeline layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("render pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[],
+                compilation_options: wgpu::PipelineCompilationOptions::default(), // TODO: simplify default?
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(), // TODO: simplify default?
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                // setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
+                polygon_mode: wgpu::PolygonMode::Fill,
+                // requires Features::DEPTH_CLIP_CONTROL
+                unclipped_depth: false,
+                // requires Features::CONSERVATIVE_RASTERIZATION
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: u64::MAX, // use all samples
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+            cache: None,
+        });
+
+        Self { surface, device, queue, config, size, window, render_pipeline }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -95,7 +144,7 @@ impl<'a> State<'a> {
             &wgpu::CommandEncoderDescriptor { label: Some("render encoder") }
         );
 
-        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("render pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &view,
@@ -114,6 +163,12 @@ impl<'a> State<'a> {
             occlusion_query_set: None,
             timestamp_writes: None,
         });
+
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.draw(0..3, 0..1);
+
+        // free encoder borrow
+        drop(render_pass);
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
