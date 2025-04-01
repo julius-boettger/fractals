@@ -31,12 +31,9 @@ impl<'a> State<'a> {
 
         // handle to chosen gpu
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
-            // dont prefer specific low/high power gpu
-            power_preference: Default::default(), // TODO: simplify default?
             // needs to be able to draw on the surface
             compatible_surface: Some(&surface),
-            // use software rendering
-            force_fallback_adapter: false, // TODO: simplify default?
+            ..Default::default()
         }).await.unwrap();
 
         // actual gpu device and rendering queue
@@ -67,8 +64,7 @@ impl<'a> State<'a> {
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("render pipeline layout"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
+            ..Default::default()
         });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -78,7 +74,7 @@ impl<'a> State<'a> {
                 module: &shader,
                 entry_point: Some("vs_main"),
                 buffers: &[],
-                compilation_options: wgpu::PipelineCompilationOptions::default(), // TODO: simplify default?
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -88,26 +84,17 @@ impl<'a> State<'a> {
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(), // TODO: simplify default?
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
                 cull_mode: Some(wgpu::Face::Back),
                 // setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                 polygon_mode: wgpu::PolygonMode::Fill,
-                // requires Features::DEPTH_CLIP_CONTROL
-                unclipped_depth: false,
-                // requires Features::CONSERVATIVE_RASTERIZATION
-                conservative: false,
+                ..Default::default()
             },
+            multisample: Default::default(),
             depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: u64::MAX, // use all samples
-                alpha_to_coverage_enabled: false,
-            },
             multiview: None,
             cache: None,
         });
@@ -156,12 +143,10 @@ impl<'a> State<'a> {
                         b: 0.3,
                         a: 1.0,
                     }),
-                    store: wgpu::StoreOp::Store,
+                    ..Default::default()
                 },
             })],
-            depth_stencil_attachment: None,
-            occlusion_query_set: None,
-            timestamp_writes: None,
+            ..Default::default()
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
