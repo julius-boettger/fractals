@@ -43,6 +43,7 @@
 
         nativeBuildInputs = with pkgs; [
           cargo
+          rustc
           cargo-edit # provides `cargo upgrade` for dependencies
         ];
 
