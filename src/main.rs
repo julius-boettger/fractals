@@ -57,7 +57,8 @@ struct State<'a> {
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    num_vertices: u32,
+    index_buffer: wgpu::Buffer, 
+    num_indices: u32,
     /// whether the window should be redrawn
     redraw: bool,
 }
@@ -145,20 +146,32 @@ impl<'a> State<'a> {
             cache: None,
         });
 
+        let (vertices, indices) = utils::index_vertices(VERTICES);
+        let vertices = vertices.as_slice();
+        let indices = indices.as_slice();
+
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("vertex buffer"),
                 usage: wgpu::BufferUsages::VERTEX,
                 // bytemuck cast vertices to array slice of bytes
-                contents: bytemuck::cast_slice(VERTICES),
+                contents: bytemuck::cast_slice(vertices),
             }
         );
 
-        let num_vertices = VERTICES.len().try_into().unwrap();
+        let index_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("index buffer"),
+                usage: wgpu::BufferUsages::INDEX,
+                contents: bytemuck::cast_slice(indices),
+            }
+        );
+
+        let num_indices = indices.len().try_into().unwrap();
 
         let redraw = true;
 
-        Self { surface, device, queue, config, size, window, render_pipeline, vertex_buffer, num_vertices, redraw }
+        Self { surface, device, queue, config, size, window, render_pipeline, vertex_buffer, index_buffer, num_indices, redraw }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -206,7 +219,8 @@ impl<'a> State<'a> {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.draw(0..self.num_vertices, 0..1);
+        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
 
         // free encoder borrow
         drop(render_pass);
