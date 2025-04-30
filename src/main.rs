@@ -14,7 +14,7 @@ use winit::{
 #[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
 /// a vertex to store in the vertex buffer
 struct Vertex {
-    position: [f32; 3],
+    position: [f32; 2],
     color: [f32; 3],
 }
 
@@ -22,7 +22,7 @@ impl Vertex {
     /// shape of each vertex for the buffer
     const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
         // map shader locations to the data types
-        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3];
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x3];
 
     fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -34,9 +34,13 @@ impl Vertex {
 }
 
 const VERTICES: &[Vertex] = &[
-    Vertex { position: [ 0.0,  0.5, 0.0], color: [1.0, 0.0, 0.0] },
-    Vertex { position: [-0.5, -0.5, 0.0], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.5, -0.5, 0.0], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [-0.5,  0.5], color: [1.0, 0.0, 0.0] },
+    Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
+    Vertex { position: [ 0.5,  0.5], color: [0.0, 0.0, 1.0] },
+
+    Vertex { position: [ 0.5,  0.5], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
+    Vertex { position: [ 0.5, -0.5], color: [1.0, 0.0, 0.0] },
 ];
 
 struct State<'a> {
@@ -188,12 +192,7 @@ impl<'a> State<'a> {
                 view: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
-                        a: 1.0,
-                    }),
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     ..Default::default()
                 },
             })],
