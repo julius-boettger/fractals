@@ -49,6 +49,8 @@ struct State<'a> {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     num_vertices: u32,
+    /// whether the window should be redrawn
+    redraw: bool,
 }
 
 impl<'a> State<'a> {
@@ -145,7 +147,9 @@ impl<'a> State<'a> {
 
         let num_vertices = VERTICES.len().try_into().unwrap();
 
-        Self { surface, device, queue, config, size, window, render_pipeline, vertex_buffer, num_vertices }
+        let redraw = true;
+
+        Self { surface, device, queue, config, size, window, render_pipeline, vertex_buffer, num_vertices, redraw }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -154,6 +158,7 @@ impl<'a> State<'a> {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+            self.redraw = true;
         }
     }
 
@@ -233,35 +238,40 @@ async fn run() {
                     }
 
                     WindowEvent::RedrawRequested => {
-                        // tell winit that we want another frame after this one
-                        state.window.request_redraw();
+                        if state.redraw {
+                            // tell winit that we want another frame after this one
+                            state.window.request_redraw();
 
-                        // dont try to render when surface is not configured yet
-                        if !surface_configured {
-                            return;
-                        }
-
-                        state.update();
-
-                        match state.render() {
-                            // frame took to long to present
-                            Err(wgpu::SurfaceError::Timeout) =>
-                                println!("surface timeout"),
-
-                            Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
-                                state.resize(state.size),
-
-                            Err(wgpu::SurfaceError::OutOfMemory) => {
-                                eprintln!("out of memory");
-                                control_flow.exit();
+                            // dont try to render when surface is not configured yet
+                            if !surface_configured {
+                                return;
                             }
 
-                            Err(wgpu::SurfaceError::Other) => {
-                                eprintln!("generic surface error");
-                                control_flow.exit();
+                            state.update();
+
+                            match state.render() {
+                                // frame took to long to present
+                                Err(wgpu::SurfaceError::Timeout) =>
+                                    println!("surface timeout"),
+
+                                Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
+                                    state.resize(state.size),
+
+                                Err(wgpu::SurfaceError::OutOfMemory) => {
+                                    eprintln!("out of memory");
+                                    control_flow.exit();
+                                }
+
+                                Err(wgpu::SurfaceError::Other) => {
+                                    eprintln!("generic surface error");
+                                    control_flow.exit();
+                                }
+
+                                Ok(_) => ()
                             }
 
-                            Ok(_) => ()
+                            // only redraw once as we are rendering a still image
+                            state.redraw = false;
                         }
                     }
 
