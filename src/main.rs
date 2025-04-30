@@ -1,3 +1,5 @@
+mod utils;
+
 use std::mem::size_of;
 use wgpu::util::DeviceExt;
 use winit::{
@@ -10,8 +12,11 @@ use winit::{
 
 // follow C's rules for the memory layout (e.g. dont reorder)
 #[repr(C)]
-// allow bitwise casts with bytemuck
-#[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
+#[derive(
+    Clone, Copy, PartialEq, Debug,
+    // allow bitwise casts with bytemuck
+    bytemuck::Zeroable, bytemuck::Pod,
+)]
 /// a vertex to store in the vertex buffer
 struct Vertex {
     position: [f32; 2],
