@@ -39,6 +39,7 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
         let offset1 = set_length([-vector[1],  vector[0]], line_width / 2.);
         let offset2 = set_length([ vector[1], -vector[0]], line_width / 2.);
 
+        // i have no idea if these triangles are consistently clockwise, counterclockwise, or just inconsistent
         vec![
             Vertex { position: [a_pos[0] + offset1[0], a_pos[1] + offset1[1]], color: a.color },
             Vertex { position: [a_pos[0] + offset2[0], a_pos[1] + offset2[1]], color: a.color },
