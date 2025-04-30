@@ -10,6 +10,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+use utils::{Color, Position};
+
 // follow C's rules for the memory layout (e.g. dont reorder)
 #[repr(C)]
 #[derive(
@@ -19,8 +21,8 @@ use winit::{
 )]
 /// a vertex to store in the vertex buffer
 struct Vertex {
-    position: [f32; 2],
-    color: [f32; 3],
+    position: Position,
+    color: Color,
 }
 
 impl Vertex {
@@ -39,13 +41,14 @@ impl Vertex {
 }
 
 const VERTICES: &[Vertex] = &[
-    Vertex { position: [-0.5,  0.5], color: [1.0, 0.0, 0.0] },
     Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.5,  0.5], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [ 0.5, -0.5], color: [0.0, 0.0, 1.0] },
 
-    Vertex { position: [ 0.5,  0.5], color: [0.0, 0.0, 1.0] },
     Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.5, -0.5], color: [1.0, 0.0, 0.0] },
+    Vertex { position: [ 0.0,  0.5], color: [1.0, 0.0, 0.0] },
+
+    Vertex { position: [ 0.5, -0.5], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [ 0.0,  0.5], color: [1.0, 0.0, 0.0] },
 ];
 
 struct State<'a> {
@@ -146,7 +149,8 @@ impl<'a> State<'a> {
             cache: None,
         });
 
-        let (vertices, indices) = utils::index_vertices(VERTICES);
+        let vertices = utils::lines_as_triangles(VERTICES, 0.01);
+        let (vertices, indices) = utils::index_vertices(&vertices);
         let vertices = vertices.as_slice();
         let indices = indices.as_slice();
 
