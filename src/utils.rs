@@ -35,12 +35,17 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
         // pointing from a to b
         let vector = [b_pos[0] - a_pos[0], b_pos[1] - a_pos[1]];
 
-        // orthogonal to vector
+        // orthogonal to vector to make rectangle
         let offset1 = set_length([-vector[1],  vector[0]], line_width / 2.);
         let offset2 = set_length([ vector[1], -vector[0]], line_width / 2.);
 
-        // i have no idea if these triangles are consistently clockwise, counterclockwise, or just inconsistent
-        vec![
+        // on same line as vector to make smoother ends
+        let a_offset = set_length([-vector[0], -vector[1]], line_width / 2.);
+        let b_offset = set_length(vector, line_width / 2.);
+
+        [
+            // line as rectangle of two triangles
+
             Vertex { position: [a_pos[0] + offset1[0], a_pos[1] + offset1[1]], color: a.color },
             Vertex { position: [a_pos[0] + offset2[0], a_pos[1] + offset2[1]], color: a.color },
             Vertex { position: [b_pos[0] + offset1[0], b_pos[1] + offset1[1]], color: b.color },
@@ -48,6 +53,16 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
             Vertex { position: [b_pos[0] + offset1[0], b_pos[1] + offset1[1]], color: b.color },
             Vertex { position: [a_pos[0] + offset2[0], a_pos[1] + offset2[1]], color: a.color },
             Vertex { position: [b_pos[0] + offset2[0], b_pos[1] + offset2[1]], color: b.color },
+
+            // smoother ends of line
+
+            Vertex { position: [a_pos[0] +  offset1[0], a_pos[1] +  offset1[1]], color: a.color },
+            Vertex { position: [a_pos[0] + a_offset[0], a_pos[1] + a_offset[1]], color: a.color },
+            Vertex { position: [a_pos[0] +  offset2[0], a_pos[1] +  offset2[1]], color: a.color },
+
+            Vertex { position: [b_pos[0] +  offset1[0], b_pos[1] +  offset1[1]], color: b.color },
+            Vertex { position: [b_pos[0] +  offset2[0], b_pos[1] +  offset2[1]], color: b.color },
+            Vertex { position: [b_pos[0] + b_offset[0], b_pos[1] + b_offset[1]], color: b.color },
         ]
     }).flatten().collect()
 }
