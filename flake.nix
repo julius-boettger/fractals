@@ -49,6 +49,9 @@
 
         # fix rust-analyzer in vscode
         RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+
+        # enable logging
+        RUST_LOG = "fractals=info";
       };
     });
   };
