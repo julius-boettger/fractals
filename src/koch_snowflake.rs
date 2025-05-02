@@ -1,12 +1,10 @@
-use crate::{render::Vertex, utils::Color, vec2::Vec2};
+use crate::{render::Vertex, vec2::Vec2};
 
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>
 }
 
 impl KochSnowflake {
-
-    const COLOR: Color = [0.0, 1.0, 1.0];
 
     // adjust shape
     const WIDTH_DIVISOR: f32 = 3.;
@@ -15,14 +13,14 @@ impl KochSnowflake {
     pub fn new() -> Self {
         Self {
             data: vec![vec![
-                Vertex::new(Vec2::new(-0.5, -0.5), Self::COLOR),
-                Vertex::new(Vec2::new( 0.5, -0.5), Self::COLOR),
+                Vertex::new(Vec2::new(-0.5, -0.5), 0),
+                Vertex::new(Vec2::new( 0.5, -0.5), 0),
 
-                Vertex::new(Vec2::new(-0.5, -0.5), Self::COLOR),
-                Vertex::new(Vec2::new( 0.0,  0.5), Self::COLOR),
+                Vertex::new(Vec2::new(-0.5, -0.5), 0),
+                Vertex::new(Vec2::new( 0.0,  0.5), 0),
 
-                Vertex::new(Vec2::new( 0.5, -0.5), Self::COLOR),
-                Vertex::new(Vec2::new( 0.0,  0.5), Self::COLOR),
+                Vertex::new(Vec2::new( 0.5, -0.5), 0),
+                Vertex::new(Vec2::new( 0.0,  0.5), 0),
             ]],
         }
     }
@@ -36,14 +34,16 @@ impl KochSnowflake {
     }
 
     fn next_iteration(&mut self) {
-        log::debug!("computing iteration {}", self.data.len());
+        let last_vertices = self.data.last().unwrap();
 
-        let current = self.data.last().unwrap();
+        let iteration = self.data.len().try_into().unwrap();
+        log::debug!("computing iteration {}", iteration);
 
-        let next = current
+        let vertices = last_vertices
             .chunks(2)
             .map(|line| {
                 let (a, b) = (line[0].position, line[1].position);
+                let (a_iter, b_iter) = (line[0].iteration, line[1].iteration);
 
                 let a_to_b = b - a;
 
@@ -58,16 +58,22 @@ impl KochSnowflake {
                 };
 
                 [
-                          a, third_a,
-                    third_a,     top,
-                        top, third_b,
-                    third_b,       b,
+                    Vertex::new(a,       a_iter),
+                    Vertex::new(third_a, a_iter),
+
+                    Vertex::new(third_a, a_iter),
+                    Vertex::new(top,     iteration),
+
+                    Vertex::new(top,     iteration),
+                    Vertex::new(third_b, b_iter),
+
+                    Vertex::new(third_b, b_iter),
+                    Vertex::new(b,       b_iter),
                 ]
             })
             .flatten()
-            .map(|p| Vertex::new(p, Self::COLOR))
             .collect();
 
-        self.data.push(next);
+        self.data.push(vertices);
     }
 }

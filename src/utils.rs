@@ -1,8 +1,5 @@
 use crate::{render::Vertex, vec2::Vec2};
 
-/// RGB with values in \[0, 1\]
-pub type Color = [f32; 3];
-
 /// describes how an array of vertices should be interpreted
 pub enum VertexFormat {
     /// groups of two to form lines
@@ -35,7 +32,7 @@ pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u16>) {
 pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
     vertices.chunks(2).map(|line| {
         let (a, b) = (line[0].position, line[1].position);
-        let (a_color, b_color) = (line[0].color, line[1].color);
+        let (a_iter, b_iter) = (line[0].iteration, line[1].iteration);
 
         let a_to_b = b - a;
 
@@ -50,23 +47,23 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
         [
             // line as rectangle of two triangles
 
-            Vertex::new(a + offset1, a_color),
-            Vertex::new(a + offset2, a_color),
-            Vertex::new(b + offset1, b_color),
+            Vertex::new(a + offset1, a_iter),
+            Vertex::new(a + offset2, a_iter),
+            Vertex::new(b + offset1, b_iter),
 
-            Vertex::new(b + offset1, b_color),
-            Vertex::new(a + offset2, a_color),
-            Vertex::new(b + offset2, b_color),
+            Vertex::new(b + offset1, b_iter),
+            Vertex::new(a + offset2, a_iter),
+            Vertex::new(b + offset2, b_iter),
 
             // smoother ends of line
 
-            Vertex::new(a +  offset1, a_color),
-            Vertex::new(a + a_offset, a_color),
-            Vertex::new(a +  offset2, a_color),
+            Vertex::new(a +  offset1, a_iter),
+            Vertex::new(a + a_offset, a_iter),
+            Vertex::new(a +  offset2, a_iter),
 
-            Vertex::new(b +  offset1, b_color),
-            Vertex::new(b +  offset2, b_color),
-            Vertex::new(b + b_offset, b_color),
+            Vertex::new(b +  offset1, b_iter),
+            Vertex::new(b +  offset2, b_iter),
+            Vertex::new(b + b_offset, b_iter),
         ]
     }).flatten().collect()
 }

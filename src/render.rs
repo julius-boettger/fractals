@@ -9,7 +9,7 @@ use winit::{
 };
 
 use crate::vec2::Vec2;
-use crate::utils::{self, Color, VertexFormat};
+use crate::utils::{self, VertexFormat};
 
 // follow C's rules for the memory layout (e.g. dont reorder)
 #[repr(C)]
@@ -21,14 +21,18 @@ use crate::utils::{self, Color, VertexFormat};
 /// a vertex to store in the vertex buffer
 pub struct Vertex {
     pub position: Vec2,
-    pub color: Color,
+    // need >=32 bits to avoid padding, otherwise
+    // u8 would have had enough possible values
+    /// fractal iteration this vertex was created in,
+    /// 0 meaning the initial state
+    pub iteration: u32,
 }
 
 impl Vertex {
     /// shape of each vertex for the buffer
     const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
         // map shader locations to the data types
-        wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x3];
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
 
     fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
@@ -38,8 +42,8 @@ impl Vertex {
         }
     }
 
-    pub fn new(position: Vec2, color: Color) -> Self {
-        Self { position, color }
+    pub fn new(position: Vec2, iteration: u32) -> Self {
+        Self { position, iteration }
     }
 }
 
@@ -114,13 +118,13 @@ impl<'a> State<'a> {
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: Some("vs_main"),
+                entry_point: Some("vertex"),
                 buffers: &[Vertex::buffer_layout()],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some("fs_main"),
+                entry_point: Some("fragment"),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
