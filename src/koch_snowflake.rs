@@ -1,4 +1,4 @@
-use crate::{Vertex, Color, utils};
+use crate::{Vertex, Color, vec2::Vec2};
 
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>
@@ -15,14 +15,14 @@ impl KochSnowflake {
     pub fn new() -> Self {
         Self {
             data: vec![vec![
-                Vertex { position: [-0.5, -0.5], color: Self::COLOR },
-                Vertex { position: [ 0.5, -0.5], color: Self::COLOR },
+                Vertex { position: Vec2::new(-0.5, -0.5), color: Self::COLOR },
+                Vertex { position: Vec2::new( 0.5, -0.5), color: Self::COLOR },
 
-                Vertex { position: [-0.5, -0.5], color: Self::COLOR },
-                Vertex { position: [ 0.0,  0.5], color: Self::COLOR },
+                Vertex { position: Vec2::new(-0.5, -0.5), color: Self::COLOR },
+                Vertex { position: Vec2::new( 0.0,  0.5), color: Self::COLOR },
 
-                Vertex { position: [ 0.5, -0.5], color: Self::COLOR },
-                Vertex { position: [ 0.0,  0.5], color: Self::COLOR },
+                Vertex { position: Vec2::new( 0.5, -0.5), color: Self::COLOR },
+                Vertex { position: Vec2::new( 0.0,  0.5), color: Self::COLOR },
             ]],
         }
     }
@@ -45,24 +45,16 @@ impl KochSnowflake {
             .map(|line| {
                 let (a, b) = (line[0].position, line[1].position);
 
-                // pointing from a to b
-                let vector = [b[0] - a[0],
-                                        b[1] - a[1]];
+                let a_to_b = b - a;
 
-                let third_a = [a[0] + ( vector[0] / Self::WIDTH_DIVISOR),
-                                         a[1] + ( vector[1] / Self::WIDTH_DIVISOR)];
-
-                let third_b = [b[0] + (-vector[0] / Self::WIDTH_DIVISOR),
-                                         b[1] + (-vector[1] / Self::WIDTH_DIVISOR)];
+                let third_a = a + ( a_to_b / Self::WIDTH_DIVISOR);
+                let third_b = b + (-a_to_b / Self::WIDTH_DIVISOR);
 
                 let top = {
-                    let away_orthogonal = utils::away_orthogonal(vector, a);
-                    // reduce length
-                    let away_orthogonal = [away_orthogonal[0] / Self::HEIGHT_DIVISOR,
-                                                     away_orthogonal[1] / Self::HEIGHT_DIVISOR];
+                    // with reduced length
+                    let away_orthogonal = a_to_b.away_orthogonal(a) / Self::HEIGHT_DIVISOR;
 
-                    [a[0] + (vector[0] / 2.) + away_orthogonal[0],
-                     a[1] + (vector[1] / 2.) + away_orthogonal[1]]
+                    a + (a_to_b / 2.) + away_orthogonal
                 };
 
                 [

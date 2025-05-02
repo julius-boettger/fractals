@@ -1,5 +1,6 @@
-mod utils;
 mod koch_snowflake;
+mod utils;
+mod vec2;
 
 use std::mem::size_of;
 use wgpu::util::DeviceExt;
@@ -11,7 +12,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use utils::{Color, Position};
+use vec2::Vec2;
+use utils::Color;
 
 // follow C's rules for the memory layout (e.g. dont reorder)
 #[repr(C)]
@@ -22,7 +24,7 @@ use utils::{Color, Position};
 )]
 /// a vertex to store in the vertex buffer
 struct Vertex {
-    position: Position,
+    position: Vec2,
     color: Color,
 }
 
