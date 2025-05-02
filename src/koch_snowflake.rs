@@ -1,4 +1,4 @@
-use crate::{Vertex, Color, vec2::Vec2};
+use crate::{render::Vertex, utils::Color, vec2::Vec2};
 
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>

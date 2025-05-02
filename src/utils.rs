@@ -1,4 +1,4 @@
-use super::{Vertex, Vec2};
+use crate::{render::Vertex, vec2::Vec2};
 
 /// RGB with values in \[0, 1\]
 pub type Color = [f32; 3];
