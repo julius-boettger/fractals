@@ -13,7 +13,7 @@ use winit::{
 };
 
 use vec2::Vec2;
-use utils::Color;
+use utils::{Color, VertexFormat};
 
 // follow C's rules for the memory layout (e.g. dont reorder)
 #[repr(C)]
@@ -59,7 +59,7 @@ struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    async fn new(window: &'a Window) -> State<'a> {
+    async fn new(window: &'a Window, vertices: &Vec<Vertex>, vertex_format: VertexFormat) -> State<'a> {
         let size = window.inner_size();
 
         // to create surface and adapter
@@ -142,18 +142,19 @@ impl<'a> State<'a> {
             cache: None,
         });
 
-        let mut koch_snowflake = koch_snowflake::KochSnowflake::new();
-        let line_vertices = koch_snowflake.get_line_vertices(4);
-        let vertices = utils::lines_as_triangles(&line_vertices, 0.005);
+        let vertices = match vertex_format {
+            VertexFormat::Lines => &utils::lines_as_triangles(&vertices, 0.005),
+            VertexFormat::Triangles => vertices,
+        };
+
         let (vertices, indices) = utils::index_vertices(&vertices);
-        let (vertices, indices) = (vertices.as_slice(), indices.as_slice());
 
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("vertex buffer"),
                 usage: wgpu::BufferUsages::VERTEX,
                 // bytemuck cast vertices to array slice of bytes
-                contents: bytemuck::cast_slice(vertices),
+                contents: bytemuck::cast_slice(vertices.as_slice()),
             }
         );
 
@@ -161,7 +162,7 @@ impl<'a> State<'a> {
             &wgpu::util::BufferInitDescriptor {
                 label: Some("index buffer"),
                 usage: wgpu::BufferUsages::INDEX,
-                contents: bytemuck::cast_slice(indices),
+                contents: bytemuck::cast_slice(indices.as_slice()),
             }
         );
 
@@ -234,12 +235,12 @@ impl<'a> State<'a> {
     }
 }
 
-async fn run() {
+async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let mut state = State::new(&window).await;
+    let mut state = State::new(&window, vertices, vertex_format).await;
 
     // only start rendering once surface is configured
     let mut surface_configured = false;
@@ -313,6 +314,7 @@ async fn run() {
 }
 
 fn main() {
-    // to get async execution context
-    pollster::block_on(run());
+    let mut koch_snowflake = koch_snowflake::KochSnowflake::new();
+    let vertices = koch_snowflake.get_line_vertices(4);
+    pollster::block_on(render(vertices, VertexFormat::Lines));
 }

@@ -3,6 +3,14 @@ use super::{Vertex, Vec2};
 /// RGB with values in \[0, 1\]
 pub type Color = [f32; 3];
 
+/// describes how an array of vertices should be interpreted
+pub enum VertexFormat {
+    /// groups of two to form lines
+    Lines,
+    /// groups of three to form triangles
+    Triangles,
+}
+
 /// get unique elements of an array slice without hashing
 pub fn unique<T: Clone + PartialEq>(slice: &[T]) -> Vec<T> {
     let mut result = vec![];
