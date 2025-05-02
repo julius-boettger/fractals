@@ -1,4 +1,5 @@
 mod utils;
+mod koch_snowflake;
 
 use std::mem::size_of;
 use wgpu::util::DeviceExt;
@@ -39,17 +40,6 @@ impl Vertex {
         }
     }
 }
-
-const VERTICES: &[Vertex] = &[
-    Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.5, -0.5], color: [0.0, 0.0, 1.0] },
-
-    Vertex { position: [-0.5, -0.5], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.0,  0.5], color: [1.0, 0.0, 0.0] },
-
-    Vertex { position: [ 0.5, -0.5], color: [0.0, 0.0, 1.0] },
-    Vertex { position: [ 0.0,  0.5], color: [1.0, 0.0, 0.0] },
-];
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -150,10 +140,11 @@ impl<'a> State<'a> {
             cache: None,
         });
 
-        let vertices = utils::lines_as_triangles(VERTICES, 0.01);
+        let mut koch_snowflake = koch_snowflake::KochSnowflake::new();
+        let line_vertices = koch_snowflake.get_line_vertices(4);
+        let vertices = utils::lines_as_triangles(&line_vertices, 0.005);
         let (vertices, indices) = utils::index_vertices(&vertices);
-        let vertices = vertices.as_slice();
-        let indices = indices.as_slice();
+        let (vertices, indices) = (vertices.as_slice(), indices.as_slice());
 
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
