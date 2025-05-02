@@ -36,7 +36,7 @@ impl KochSnowflake {
     }
 
     fn next_iteration(&mut self) {
-        log::info!("computing iteration {}", self.data.len());
+        log::debug!("computing iteration {}", self.data.len());
 
         let current = self.data.last().unwrap();
 

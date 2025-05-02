@@ -166,7 +166,7 @@ impl<'a> State<'a> {
         );
 
         log::info!("buffered {} unique vertices", vertices.len());
-        log::info!("buffered {} vertices / {} triangles", indices.len(), indices.len() / 3);
+        log::info!("buffered {} indices ({} triangles)", indices.len(), indices.len() / 3);
 
         let num_indices = indices.len().try_into().unwrap();
 
@@ -250,7 +250,6 @@ async fn run() {
                 match event {
 
                     WindowEvent::Resized(physical_size) => {
-                        log::info!("resizing with {physical_size:?}");
                         // this also (re)configures the surface 
                         state.resize(*physical_size);
                         surface_configured = true;
