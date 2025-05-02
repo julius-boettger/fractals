@@ -232,7 +232,6 @@ impl<'a> State<'a> {
 }
 
 pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
-    env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
