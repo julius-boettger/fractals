@@ -50,23 +50,23 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
         [
             // line as rectangle of two triangles
 
-            Vertex { position: a + offset1, color: a_color },
-            Vertex { position: a + offset2, color: a_color },
-            Vertex { position: b + offset1, color: b_color },
+            Vertex::new(a + offset1, a_color),
+            Vertex::new(a + offset2, a_color),
+            Vertex::new(b + offset1, b_color),
 
-            Vertex { position: b + offset1, color: b_color },
-            Vertex { position: a + offset2, color: a_color },
-            Vertex { position: b + offset2, color: b_color },
+            Vertex::new(b + offset1, b_color),
+            Vertex::new(a + offset2, a_color),
+            Vertex::new(b + offset2, b_color),
 
             // smoother ends of line
 
-            Vertex { position: a +  offset1, color: a_color },
-            Vertex { position: a + a_offset, color: a_color },
-            Vertex { position: a +  offset2, color: a_color },
+            Vertex::new(a +  offset1, a_color),
+            Vertex::new(a + a_offset, a_color),
+            Vertex::new(a +  offset2, a_color),
 
-            Vertex { position: b +  offset1, color: b_color },
-            Vertex { position: b +  offset2, color: b_color },
-            Vertex { position: b + b_offset, color: b_color },
+            Vertex::new(b +  offset1, b_color),
+            Vertex::new(b +  offset2, b_color),
+            Vertex::new(b + b_offset, b_color),
         ]
     }).flatten().collect()
 }

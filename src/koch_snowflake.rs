@@ -15,14 +15,14 @@ impl KochSnowflake {
     pub fn new() -> Self {
         Self {
             data: vec![vec![
-                Vertex { position: Vec2::new(-0.5, -0.5), color: Self::COLOR },
-                Vertex { position: Vec2::new( 0.5, -0.5), color: Self::COLOR },
+                Vertex::new(Vec2::new(-0.5, -0.5), Self::COLOR),
+                Vertex::new(Vec2::new( 0.5, -0.5), Self::COLOR),
 
-                Vertex { position: Vec2::new(-0.5, -0.5), color: Self::COLOR },
-                Vertex { position: Vec2::new( 0.0,  0.5), color: Self::COLOR },
+                Vertex::new(Vec2::new(-0.5, -0.5), Self::COLOR),
+                Vertex::new(Vec2::new( 0.0,  0.5), Self::COLOR),
 
-                Vertex { position: Vec2::new( 0.5, -0.5), color: Self::COLOR },
-                Vertex { position: Vec2::new( 0.0,  0.5), color: Self::COLOR },
+                Vertex::new(Vec2::new( 0.5, -0.5), Self::COLOR),
+                Vertex::new(Vec2::new( 0.0,  0.5), Self::COLOR),
             ]],
         }
     }
@@ -65,7 +65,7 @@ impl KochSnowflake {
                 ]
             })
             .flatten()
-            .map(|p| Vertex { position: p, color: Self::COLOR })
+            .map(|p| Vertex::new(p, Self::COLOR))
             .collect();
 
         self.data.push(next);

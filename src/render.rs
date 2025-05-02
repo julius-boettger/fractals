@@ -37,6 +37,10 @@ impl Vertex {
             attributes: &Self::ATTRIBUTES,
         }
     }
+
+    pub fn new(position: Vec2, color: Color) -> Self {
+        Self { position, color }
+    }
 }
 
 struct State<'a> {
