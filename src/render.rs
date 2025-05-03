@@ -21,8 +21,8 @@ use crate::utils::{self, VertexFormat};
 /// a vertex to store in the vertex buffer
 pub struct Vertex {
     pub position: Vec2,
-    // need >=32 bits to avoid padding, otherwise
-    // u8 would have had enough possible values
+    // need 32 bits to avoid padding and have a corresponding type in WGSL,
+    // otherwise u8 would have had enough possible values
     /// fractal iteration this vertex was created in,
     /// 0 meaning the initial state
     pub iteration: u32,
@@ -136,8 +136,6 @@ impl<'a> State<'a> {
                 topology: wgpu::PrimitiveTopology::TriangleList,
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: Some(wgpu::Face::Back),
-                // setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
-                polygon_mode: wgpu::PolygonMode::Fill,
                 ..Default::default()
             },
             multisample: Default::default(),
@@ -185,15 +183,6 @@ impl<'a> State<'a> {
             self.surface.configure(&self.device, &self.config);
             self.redraw = true;
         }
-    }
-
-    #[allow(unused_variables)]
-    fn input(&mut self, event: &WindowEvent) -> bool {
-        false
-    }
-
-    fn update(&mut self) {
-        
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -256,7 +245,7 @@ pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
 
     event_loop.run(move |event, control_flow|
         if let Event::WindowEvent { ref event, window_id } = event {
-            if window_id == state.window.id() && !state.input(&event) {
+            if window_id == state.window.id() {
                 match event {
 
                     WindowEvent::Resized(physical_size) => {
@@ -274,8 +263,6 @@ pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
                             if !surface_configured {
                                 return;
                             }
-
-                            state.update();
 
                             match state.render() {
                                 // frame took to long to present
