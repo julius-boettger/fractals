@@ -305,11 +305,11 @@ pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
 
                     WindowEvent::CloseRequested => control_flow.exit(),
 
-                    // exit on escape
+                    // exit on ESC or Q
                     WindowEvent::KeyboardInput {
                         event: KeyEvent {
                             state: ElementState::Pressed,
-                            physical_key: PhysicalKey::Code(KeyCode::Escape),
+                            physical_key: PhysicalKey::Code(KeyCode::Escape | KeyCode::KeyQ),
                             ..
                         },
                         ..
