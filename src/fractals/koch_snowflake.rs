@@ -3,16 +3,15 @@ use rayon::prelude::*;
 use crate::fractals::Fractal;
 use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
+/// https://en.wikipedia.org/wiki/Koch_snowflake
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>
 }
 
 impl KochSnowflake {
-
     // adjust shape
     const WIDTH_DIVISOR: f32 = 3.;
     const HEIGHT_DIVISOR: f32 = 4.;
-
 }
 
 impl Fractal for KochSnowflake {
