@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 use crate::{render::Vertex, vec2::Vec2, utils::VertexFormat};
 
 pub struct KochSnowflake {
@@ -45,7 +47,7 @@ impl KochSnowflake {
         }
 
         let vertices = last_vertices
-            .chunks(2)
+            .par_chunks(2)
             .map(|line| {
                 let (a, b) = (line[0].position, line[1].position);
                 let (a_iter, b_iter) = (line[0].iteration, line[1].iteration);

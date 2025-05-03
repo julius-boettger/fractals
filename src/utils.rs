@@ -67,7 +67,7 @@ pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
 }
 
 pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
-    vertices.chunks(2).map(|line| {
+    vertices.par_chunks(2).map(|line| {
         let (a, b) = (line[0].position, line[1].position);
         let (a_iter, b_iter) = (line[0].iteration, line[1].iteration);
 
