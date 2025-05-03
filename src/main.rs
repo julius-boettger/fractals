@@ -6,13 +6,14 @@ mod vec2;
 use pollster::block_on;
 
 use render::render;
-use utils::VertexFormat;
+use koch_snowflake::KochSnowflake;
 
 fn main() {
     env_logger::init();
 
-    let mut koch_snowflake = koch_snowflake::KochSnowflake::new();
-    let vertices = koch_snowflake.get_line_vertices(4);
+    let mut koch_snowflake = KochSnowflake::new();
+    let vertices = koch_snowflake.vertices(4);
+    let vertex_format = KochSnowflake::vertex_format();
 
-    block_on(render(vertices, VertexFormat::Lines));
+    block_on(render(vertices, vertex_format));
 }

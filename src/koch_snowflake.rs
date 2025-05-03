@@ -1,4 +1,4 @@
-use crate::{render::Vertex, vec2::Vec2};
+use crate::{render::Vertex, vec2::Vec2, utils::VertexFormat};
 
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>
@@ -25,7 +25,9 @@ impl KochSnowflake {
         }
     }
 
-    pub fn get_line_vertices(&mut self, iteration: usize) -> &Vec<Vertex> {
+    pub const fn vertex_format() -> VertexFormat { VertexFormat::Lines }
+
+    pub fn vertices(&mut self, iteration: usize) -> &Vec<Vertex> {
         while self.data.len() <= iteration {
             self.next_iteration();
         }
