@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{render::Vertex, vec2::Vec2};
 
 /// describes how an array of vertices should be interpreted
@@ -9,20 +11,41 @@ pub enum VertexFormat {
     Triangles,
 }
 
-/// get unique elements of an array slice without hashing
-pub fn unique<T: Clone + PartialEq>(slice: &[T]) -> Vec<T> {
-    let mut result = vec![];
-    for item in slice {
-        if !result.contains(item) {
-            result.push(item.clone());
-        }
+fn unique_vertices(vertices: &[Vertex]) -> Vec<Vertex> {
+    // efficiently determining unique values of a collection
+    // usually requires hashing, and rusts floating point primitives
+    // (that are part of each Vertex) are not that easy to hash.
+    // solution: map vertices to alternative, hashable structs/types,
+    //           determine unique values, then map back
+
+    #[derive(Clone, PartialEq, Eq, Hash)]
+    struct HashableVec2 { x: u32, y: u32 }
+
+    #[derive(Clone, PartialEq, Eq, Hash)]
+    struct HashableVertex {
+        position: HashableVec2,
+        iteration: u32,
     }
-    result
+
+    // hashable alternative structs should have the exact same memory layout
+    // so that we can use std::mem::transmute
+    use std::mem::{align_of, size_of};
+    assert_eq!( size_of::<Vertex>(),  size_of::<HashableVertex>());
+    assert_eq!(align_of::<Vertex>(), align_of::<HashableVertex>());
+    assert_eq!( size_of::<  Vec2>(),  size_of::<  HashableVec2>());
+    assert_eq!(align_of::<  Vec2>(), align_of::<  HashableVec2>());
+
+    use std::mem::transmute;
+    vertices.iter()
+        .map(|v| unsafe { transmute::<Vertex, HashableVertex>(*v) })
+        .unique()
+        .map(|v| unsafe { transmute::<HashableVertex, Vertex>(v) })
+        .collect()
 }
 
 /// transform ordered, partly duplicate vertices into unique vertices and indices 
 pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
-    let unique_vertices = unique(vertices);
+    let unique_vertices = unique_vertices(vertices);
     let indices = vertices.iter().map(|vertex| {
         unique_vertices.iter().position(|x| x == vertex).unwrap().try_into().unwrap()
     }).collect();

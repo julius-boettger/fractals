@@ -10,3 +10,4 @@ log = "0.4" # logging api, for own logging (with env_logger as implementation)
 winit = { version = "0.29", features = ["rwh_05"] } # windowing
 pollster = "0.3" # lightweight async runtime
 bytemuck = { version = "1.16", features = [ "derive" ] } # simple (bitwise) type casting
+itertools = "0.14.0" # iterator utilites like .unique()
