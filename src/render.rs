@@ -247,6 +247,15 @@ pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
     // only start rendering once surface is configured
     let mut surface_configured = false;
 
+    // if (probably) profiling: exit here before entering the infinite event loop
+    if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
+        if value == "true" {
+            println!("detected environment variable CARGO_PROFILE_RELEASE_DEBUG=true");
+            println!("early-exiting now before entering event loop");
+            std::process::exit(0);
+        }
+    }
+
     event_loop.run(move |event, control_flow|
         if let Event::WindowEvent { ref event, window_id } = event {
             if window_id == state.window.id() && !state.input(&event) {

@@ -45,6 +45,8 @@
           cargo
           rustc
           cargo-edit # provides `cargo upgrade` for dependencies
+          cargo-flamegraph # provides `cargo flamegraph` for profiling
+                           # best used with CARGO_PROFILE_RELEASE_DEBUG=true
         ];
 
         # fix rust-analyzer in vscode
