@@ -1,3 +1,5 @@
+pub mod koch_snowflake;
+
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
 pub trait Fractal {
