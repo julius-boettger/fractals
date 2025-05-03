@@ -1,5 +1,6 @@
 use rayon::prelude::*;
 
+use crate::fractals::Fractal;
 use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
 pub struct KochSnowflake {
@@ -12,7 +13,10 @@ impl KochSnowflake {
     const WIDTH_DIVISOR: f32 = 3.;
     const HEIGHT_DIVISOR: f32 = 4.;
 
-    pub fn new() -> Self {
+}
+
+impl Fractal for KochSnowflake {
+    fn new() -> Self {
         Self {
             data: vec![vec![
                 Vertex::new(Vec2::new(-0.75, -0.45), 0),
@@ -27,15 +31,10 @@ impl KochSnowflake {
         }
     }
 
-    pub const fn vertex_format() -> VertexFormat { VertexFormat::Lines }
-
-    /// iteration 0 meaning initial state
-    pub fn vertices(&mut self, iteration: usize) -> &Vec<Vertex> {
-        while self.data.len() <= iteration {
-            self.next_iteration();
-        }
-
-        &self.data[iteration]
+    fn vertex_format() -> VertexFormat { VertexFormat::Lines }
+    
+    fn data(&self) -> &Vec<Vec<Vertex>> {
+        &self.data
     }
 
     fn next_iteration(&mut self) {
