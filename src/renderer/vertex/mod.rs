@@ -1,6 +1,45 @@
+pub mod vec2;
+
 use rayon::prelude::*;
 
-use crate::{render::Vertex, vec2::Vec2};
+use vec2::Vec2;
+
+// follow C's rules for the memory layout (e.g. dont reorder)
+#[repr(C)]
+#[derive(
+    Clone, Copy, PartialEq, Debug,
+    // allow bitwise casts with bytemuck
+    bytemuck::Zeroable, bytemuck::Pod,
+)]
+/// a vertex to store in the vertex buffer
+pub struct Vertex {
+    pub position: Vec2,
+    // need 32 bits to avoid padding and have a corresponding type in WGSL,
+    // otherwise u8 would have had enough possible values
+    /// fractal iteration this vertex was created in,
+    /// 0 meaning the initial state
+    pub iteration: u32,
+}
+
+impl Vertex {
+    /// shape of each vertex for the buffer
+    const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
+        // map shader locations to the data types
+        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
+
+    pub const fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &Self::ATTRIBUTES,
+        }
+    }
+
+    pub const fn new(position: Vec2, iteration: u32) -> Self {
+        Self { position, iteration }
+    }
+}
+
 
 /// describes how an array of vertices should be interpreted
 pub enum VertexFormat {
@@ -12,7 +51,7 @@ pub enum VertexFormat {
 }
 
 /// transform ordered, partly duplicate vertices into unique vertices and indices 
-pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
+pub fn index(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
     // efficient handling of data is a lot simpler when you can e.g.
     // hash, order or compare it. rusts floating point primitives
     // (that are part of each Vertex) have some difficulties with that.

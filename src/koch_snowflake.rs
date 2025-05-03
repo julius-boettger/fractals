@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{render::Vertex, vec2::Vec2, utils::VertexFormat};
+use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>

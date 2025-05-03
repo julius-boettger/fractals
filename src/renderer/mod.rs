@@ -1,4 +1,5 @@
-use std::mem::size_of;
+pub mod vertex;
+
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -8,44 +9,7 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use crate::vec2::Vec2;
-use crate::utils::{self, VertexFormat};
-
-// follow C's rules for the memory layout (e.g. dont reorder)
-#[repr(C)]
-#[derive(
-    Clone, Copy, PartialEq, Debug,
-    // allow bitwise casts with bytemuck
-    bytemuck::Zeroable, bytemuck::Pod,
-)]
-/// a vertex to store in the vertex buffer
-pub struct Vertex {
-    pub position: Vec2,
-    // need 32 bits to avoid padding and have a corresponding type in WGSL,
-    // otherwise u8 would have had enough possible values
-    /// fractal iteration this vertex was created in,
-    /// 0 meaning the initial state
-    pub iteration: u32,
-}
-
-impl Vertex {
-    /// shape of each vertex for the buffer
-    const ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-        // map shader locations to the data types
-        wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
-
-    fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: Default::default(),
-            attributes: &Self::ATTRIBUTES,
-        }
-    }
-
-    pub fn new(position: Vec2, iteration: u32) -> Self {
-        Self { position, iteration }
-    }
-}
+use vertex::{Vertex, VertexFormat};
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -145,11 +109,11 @@ impl<'a> State<'a> {
         });
 
         let vertices = match vertex_format {
-            VertexFormat::Lines => &utils::lines_as_triangles(&vertices, 0.005),
+            VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
             VertexFormat::Triangles => vertices,
         };
 
-        let (vertices, indices) = utils::index_vertices(&vertices);
+        let (vertices, indices) = vertex::index(&vertices);
 
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {

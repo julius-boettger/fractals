@@ -1,11 +1,9 @@
 mod koch_snowflake;
-mod render;
-mod utils;
-mod vec2;
+mod renderer;
 
 use pollster::block_on;
 
-use render::render;
+use renderer::render;
 use koch_snowflake::KochSnowflake;
 
 fn main() {
