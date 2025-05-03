@@ -15,14 +15,14 @@ impl KochSnowflake {
     pub fn new() -> Self {
         Self {
             data: vec![vec![
-                Vertex::new(Vec2::new(-0.5, -0.5), 0),
-                Vertex::new(Vec2::new( 0.5, -0.5), 0),
+                Vertex::new(Vec2::new(-0.75, -0.45), 0),
+                Vertex::new(Vec2::new( 0.75, -0.45), 0),
 
-                Vertex::new(Vec2::new(-0.5, -0.5), 0),
-                Vertex::new(Vec2::new( 0.0,  0.5), 0),
+                Vertex::new(Vec2::new(-0.75, -0.45), 0),
+                Vertex::new(Vec2::new( 0.00,  0.75), 0),
 
-                Vertex::new(Vec2::new( 0.5, -0.5), 0),
-                Vertex::new(Vec2::new( 0.0,  0.5), 0),
+                Vertex::new(Vec2::new( 0.75, -0.45), 0),
+                Vertex::new(Vec2::new( 0.00,  0.75), 0),
             ]],
         }
     }
