@@ -38,22 +38,26 @@ pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
 
     let vertices_iter = vertices.iter()
         .map(|v| unsafe { transmute(*v) });
-    let unique_vertices_iter = vertices_iter.clone().unique();
+    let vertices = vertices_iter.clone().collect_vec();
 
-    let vertices = vertices_iter.collect_vec();
+    log::debug!("collecting unique vertices from iterator");
+    let unique_vertices_iter = vertices_iter.unique();
     let unique_vertices = unique_vertices_iter.clone()
         .map(|v| unsafe { transmute::<HashableVertex, _>(v) })
-        .collect();
+        .collect_vec();
 
     // for O(1) lookups when building indices from vertices
+    log::debug!("building vertex-index-map for {} unique vertices", unique_vertices.len());
     let vertex_index_map = unique_vertices_iter
         .enumerate()
         .map(|t| (t.1, t.0.try_into().unwrap()))
         .collect::<std::collections::HashMap<_, _>>();
 
+    log::debug!("building indices from raw vertices and unique vertices");
     let indices = vertices.iter()
         .map(|v| *vertex_index_map.get(v).unwrap())
-        .collect();
+        .collect_vec();
+    log::debug!("built {} indices ({} triangles)", indices.len(), indices.len() / 3);
 
     (unique_vertices, indices)
 }

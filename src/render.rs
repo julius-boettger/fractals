@@ -170,9 +170,6 @@ impl<'a> State<'a> {
             }
         );
 
-        log::info!("buffered {} unique vertices", vertices.len());
-        log::info!("buffered {} indices ({} triangles)", indices.len(), indices.len() / 3);
-
         let num_indices = indices.len().try_into().unwrap();
 
         let redraw = true;
@@ -240,6 +237,8 @@ impl<'a> State<'a> {
 }
 
 pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
+    log::debug!("initializing");
+
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 

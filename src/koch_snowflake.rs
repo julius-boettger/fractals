@@ -27,6 +27,7 @@ impl KochSnowflake {
 
     pub const fn vertex_format() -> VertexFormat { VertexFormat::Lines }
 
+    /// iteration 0 meaning initial state
     pub fn vertices(&mut self, iteration: usize) -> &Vec<Vertex> {
         while self.data.len() <= iteration {
             self.next_iteration();
@@ -39,7 +40,9 @@ impl KochSnowflake {
         let last_vertices = self.data.last().unwrap();
 
         let iteration = self.data.len().try_into().unwrap();
-        log::debug!("computing iteration {}", iteration);
+        if iteration >= 10 {
+            log::debug!("computing iteration {}", iteration);
+        }
 
         let vertices = last_vertices
             .chunks(2)
