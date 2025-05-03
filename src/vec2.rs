@@ -13,7 +13,7 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-    pub fn new(x: f32, y: f32) -> Self {
+    pub const fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
 
@@ -38,7 +38,7 @@ impl Vec2 {
         normalized * len
     }
 
-    pub fn dot_product(&self, rhs: Self) -> f32 {
+    pub const fn dot_product(&self, rhs: Self) -> f32 {
         self.x*rhs.x + self.y*rhs.y
     }
 
