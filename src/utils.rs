@@ -57,7 +57,7 @@ pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
         .map(|t| (t.1, t.0.try_into().unwrap()))
         .collect::<std::collections::HashMap<_, _>>();
 
-    log::debug!("determining indices from raw vertices and unique vertices");
+    log::debug!("determining indices");
     let indices = alt_vertices.par_iter()
         .map(|v| *vertex_index_map.get(&v).unwrap())
         .collect::<Vec<_>>();
@@ -67,6 +67,7 @@ pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
 }
 
 pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
+    log::debug!("representing lines as triangles");
     vertices.par_chunks(2).map(|line| {
         let (a, b) = (line[0].position, line[1].position);
         let (a_iter, b_iter) = (line[0].iteration, line[1].iteration);
