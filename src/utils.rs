@@ -21,7 +21,7 @@ pub fn unique<T: Clone + PartialEq>(slice: &[T]) -> Vec<T> {
 }
 
 /// transform ordered, partly duplicate vertices into unique vertices and indices 
-pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u16>) {
+pub fn index_vertices(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
     let unique_vertices = unique(vertices);
     let indices = vertices.iter().map(|vertex| {
         unique_vertices.iter().position(|x| x == vertex).unwrap().try_into().unwrap()
