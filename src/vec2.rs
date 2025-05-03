@@ -46,14 +46,14 @@ impl Vec2 {
     /// the orthogonal has same length as the original vector.
     pub fn away_orthogonal(&self, tail: Self) -> Self {
         // we don't know if this points away from or towards the origin yet
-        let mut orthogonal = Vec2::new(-self.y, self.x);
+        let orthogonal = Vec2::new(-self.y, self.x);
 
         // if it points towards the origin, turn it around
         if tail.dot_product(orthogonal) < 0. {
-            orthogonal = -orthogonal;
+            -orthogonal
+        } else {
+             orthogonal
         }
-
-        orthogonal
     }
 }
 
