@@ -1,5 +1,6 @@
 pub mod vertex;
 
+use rayon::prelude::*;
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -11,6 +12,15 @@ use winit::{
 
 use vertex::{Vertex, VertexFormat};
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
+// note that types were chosen to correspond to the few available options in WGSL
+struct UniformBufferContent {
+    /// highest iteration value present in the current vertices
+    max_iteration: u32,
+}
+
+#[allow(dead_code)]
 struct State<'a> {
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -18,10 +28,13 @@ struct State<'a> {
     config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
     window: &'a Window,
-    render_pipeline: wgpu::RenderPipeline,
     num_indices: u32,
+    uniform_buffer_content: UniformBufferContent, 
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer, 
+    uniform_buffer: wgpu::Buffer, 
+    uniform_buffer_bind_group: wgpu::BindGroup,
+    render_pipeline: wgpu::RenderPipeline,
     /// whether the window should be redrawn
     redraw: bool,
 }
@@ -71,9 +84,76 @@ impl<'a> State<'a> {
             desired_maximum_frame_latency: 2,
         };
 
+        let vertices = match vertex_format {
+            VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
+            VertexFormat::Triangles => vertices,
+        };
+
+        let (vertices, indices) = vertex::index(&vertices);
+
+        let num_indices = indices.len().try_into().unwrap();
+
+        let uniform_buffer_content = UniformBufferContent {
+            max_iteration: vertices.par_iter()
+                .map(|v| v.iteration)
+                .max()
+                .unwrap()
+        };
+
+        // bytemuck cast to slice of bytes
+        let vertices = bytemuck::cast_slice(vertices.as_slice());
+
+        if vertices.len() > device.limits().max_buffer_size as usize {
+            log::error!("computed vertices are too large to buffer on this device");
+            std::process::exit(1);
+        }
+
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("vertex buffer"),
+            usage: wgpu::BufferUsages::VERTEX,
+            contents: vertices,
+        });
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("index buffer"),
+            usage: wgpu::BufferUsages::INDEX,
+            contents: bytemuck::cast_slice(indices.as_slice()),
+        });
+
+        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("uniform buffer"),
+            // + COPY_DST to allow easier content updating
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            contents: bytemuck::cast_slice(&[uniform_buffer_content]),
+        });
+        
+        let uniform_buffer_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("uniform buffer bind group layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+
+        let uniform_buffer_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("uniform buffer bind group"),
+            layout: &uniform_buffer_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+        });
+
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("render pipeline layout"),
+            bind_group_layouts: &[&uniform_buffer_bind_group_layout],
             ..Default::default()
         });
 
@@ -108,43 +188,10 @@ impl<'a> State<'a> {
             cache: None,
         });
 
-        let vertices = match vertex_format {
-            VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
-            VertexFormat::Triangles => vertices,
-        };
-
-        let (vertices, indices) = vertex::index(&vertices);
-
-        let num_indices = indices.len().try_into().unwrap();
-
-        // bytemuck cast to slice of bytes
-        let vertices = bytemuck::cast_slice(vertices.as_slice());
-        let  indices = bytemuck::cast_slice( indices.as_slice());
-
-        if vertices.len() > device.limits().max_buffer_size as usize {
-            log::error!("computed vertices are too large to buffer on this device");
-            std::process::exit(1);
-        }
-
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("vertex buffer"),
-                usage: wgpu::BufferUsages::VERTEX,
-                contents: vertices,
-            }
-        );
-
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("index buffer"),
-                usage: wgpu::BufferUsages::INDEX,
-                contents: indices,
-            }
-        );
 
         let redraw = true;
 
-        Self { surface, device, queue, config, size, window, render_pipeline, num_indices, vertex_buffer, index_buffer, redraw }
+        Self { surface, device, queue, config, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline, redraw }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -182,6 +229,7 @@ impl<'a> State<'a> {
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &self.uniform_buffer_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
