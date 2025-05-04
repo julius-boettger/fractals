@@ -19,9 +19,9 @@ struct State<'a> {
     size: PhysicalSize<u32>,
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
+    num_indices: u32,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer, 
-    num_indices: u32,
     /// whether the window should be redrawn
     redraw: bool,
 }
@@ -115,10 +115,11 @@ impl<'a> State<'a> {
 
         let (vertices, indices) = vertex::index(&vertices);
 
+        let num_indices = indices.len().try_into().unwrap();
+
         // bytemuck cast to slice of bytes
-        use bytemuck::cast_slice;
-        let vertices = cast_slice(vertices.as_slice());
-        let  indices = cast_slice( indices.as_slice());
+        let vertices = bytemuck::cast_slice(vertices.as_slice());
+        let  indices = bytemuck::cast_slice( indices.as_slice());
 
         if vertices.len() > device.limits().max_buffer_size as usize {
             log::error!("computed vertices are too large to buffer on this device");
@@ -141,11 +142,9 @@ impl<'a> State<'a> {
             }
         );
 
-        let num_indices = indices.len().try_into().unwrap();
-
         let redraw = true;
 
-        Self { surface, device, queue, config, size, window, render_pipeline, vertex_buffer, index_buffer, num_indices, redraw }
+        Self { surface, device, queue, config, size, window, render_pipeline, num_indices, vertex_buffer, index_buffer, redraw }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
