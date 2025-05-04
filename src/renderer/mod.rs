@@ -115,12 +115,21 @@ impl<'a> State<'a> {
 
         let (vertices, indices) = vertex::index(&vertices);
 
+        // bytemuck cast to slice of bytes
+        use bytemuck::cast_slice;
+        let vertices = cast_slice(vertices.as_slice());
+        let  indices = cast_slice( indices.as_slice());
+
+        if vertices.len() > device.limits().max_buffer_size as usize {
+            log::error!("computed vertices are too large to buffer on this device");
+            std::process::exit(1);
+        }
+
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("vertex buffer"),
                 usage: wgpu::BufferUsages::VERTEX,
-                // bytemuck cast vertices to array slice of bytes
-                contents: bytemuck::cast_slice(vertices.as_slice()),
+                contents: vertices,
             }
         );
 
@@ -128,7 +137,7 @@ impl<'a> State<'a> {
             &wgpu::util::BufferInitDescriptor {
                 label: Some("index buffer"),
                 usage: wgpu::BufferUsages::INDEX,
-                contents: bytemuck::cast_slice(indices.as_slice()),
+                contents: indices,
             }
         );
 
