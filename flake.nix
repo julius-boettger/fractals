@@ -52,7 +52,7 @@
         # fix rust-analyzer in vscode
         RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
         # enable logging
-        RUST_LOG = "fractals=debug,wgpu=error";
+        RUST_LOG = "error,fractals=trace";
         # display backtrace
         RUST_BACKTRACE = 1;
       };

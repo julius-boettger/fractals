@@ -90,7 +90,7 @@ pub fn index(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
     let unique_vertices = bytemuck::cast_slice(&unique_alt_vertices).to_vec();
 
     // for O(1) lookups when building indices from vertices
-    log::debug!("building vertex-index-map for {} unique vertices", unique_vertices.len());
+    log::debug!("building vertex-index-map");
     let vertex_index_map = unique_alt_vertices.par_iter()
         .enumerate()
         .map(|t| (t.1, t.0.try_into().unwrap()))
@@ -100,8 +100,8 @@ pub fn index(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
     let indices = alt_vertices.par_iter()
         .map(|v| *vertex_index_map.get(&v).unwrap())
         .collect::<Vec<_>>();
-    log::debug!("determined {} indices ({} triangles)", indices.len(), indices.len() / 3);
 
+    log::info!("determined {} triangles to render ({} unique vertices and {} indices)", indices.len() / 3, unique_vertices.len(), indices.len());
     (unique_vertices, indices)
 }
 
