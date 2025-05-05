@@ -60,10 +60,7 @@ impl<'a> State<'a> {
         }).await.unwrap();
 
         // actual gpu device and rendering queue
-        let (device, queue) = adapter.request_device(
-            &Default::default(),
-            None,
-        ).await.unwrap();
+        let (device, queue) = adapter.request_device(&Default::default()).await.unwrap();
 
         let surface_caps = surface.get_capabilities(&adapter);
 
