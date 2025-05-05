@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::fractals::Fractal;
+use crate::curves::FractalCurve;
 use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
 /// https://en.wikipedia.org/wiki/Koch_snowflake
@@ -14,7 +14,7 @@ impl KochSnowflake {
     const HEIGHT_DIVISOR: f32 = 4.;
 }
 
-impl Fractal for KochSnowflake {
+impl FractalCurve for KochSnowflake {
     fn new() -> Self {
         Self {
             data: vec![vec![

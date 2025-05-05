@@ -2,7 +2,8 @@ pub mod koch_snowflake;
 
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
-pub trait Fractal {
+/// https://en.wikipedia.org/wiki/Fractal_curve
+pub trait FractalCurve {
     fn new() -> Self;
     fn vertex_format() -> VertexFormat;
     fn data(&self) -> &Vec<Vec<Vertex>>;

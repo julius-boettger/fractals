@@ -1,10 +1,10 @@
-mod fractals;
+mod curves;
 mod renderer;
 
 use pollster::block_on;
 
 use renderer::render;
-use fractals::{Fractal, koch_snowflake::KochSnowflake};
+use curves::{FractalCurve, koch_snowflake::KochSnowflake};
 
 fn main() {
     // set up logger with default level if env var RUST_LOG is unset
