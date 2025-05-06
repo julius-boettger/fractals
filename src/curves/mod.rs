@@ -6,13 +6,26 @@ use crate::renderer::vertex::{Vertex, VertexFormat};
 pub trait Curve {
     fn new() -> Self;
     fn vertex_format() -> VertexFormat;
-    fn data(&self) -> &Vec<Vec<Vertex>>;
-    fn next_iteration(&mut self);
+    fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex>;
+
+    /// one element for each iteration
+    fn     data(&    self) -> &    Vec<Vec<Vertex>>;
+    fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>>;
 
     /// iteration 0 meaning initial state
     fn vertices(&mut self, iteration: usize) -> &Vec<Vertex> {
-        while self.data().len() <= iteration {
-            self.next_iteration();
+        // compute fractal iterations (if not done already)
+        for current_iteration in self.data().len() ..= iteration {
+            if current_iteration >= 9 {
+                log::debug!("computing iteration {}", current_iteration + 1);
+            }
+
+            let vertices = self.next_iteration(
+                &self.data()[current_iteration - 1],
+                current_iteration.try_into().unwrap()
+            );
+
+            self.mut_data().push(vertices);
         }
 
         let fractal_name = std::any::type_name::<Self>()
