@@ -4,7 +4,7 @@ mod renderer;
 use pollster::block_on;
 
 use renderer::render;
-use curves::{Curve, koch_snowflake::KochSnowflake};
+use curves::Curve;
 
 fn main() {
     // set up logger with default level if env var RUST_LOG is unset
@@ -13,9 +13,12 @@ fn main() {
             .default_filter_or("error,fractals=info")
     ).init();
 
-    let mut koch_snowflake = KochSnowflake::new();
-    let vertices = koch_snowflake.vertices(4);
-    let vertex_format = KochSnowflake::vertex_format();
+    type Curve = curves::koch_snowflake::KochSnowflake;
+    const ITERATION: usize = 4;
+
+    let mut curve = Curve::new();
+    let vertices = curve.vertices(ITERATION);
+    let vertex_format = Curve::vertex_format();
 
     block_on(render(vertices, vertex_format));
 }
