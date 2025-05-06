@@ -24,7 +24,7 @@ fn vertex(in: VertexInput) -> VertexOutput {
     out.scaled_iteration = f32(in.iteration) / f32(globals.max_iteration);
     // overwrite value if there was division by 0
     if globals.max_iteration == 0u {
-        out.scaled_iteration = 0.0;
+        out.scaled_iteration = 1.0;
     }
 
     return out;
