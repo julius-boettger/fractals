@@ -16,7 +16,11 @@ pub struct Line {
 }
 
 impl Line {
-    fn new(a: Vertex, b: Vertex, top: Vec2) -> Self {
+    /// assumes `top_direction` is normalized
+    fn new(a: Vertex, b: Vertex, top_direction: Vec2, height: f32) -> Self {
+        let a_to_b = b.position - a.position;
+        let middle = a.position + (a_to_b / 2.);
+        let top = middle + (top_direction * height);
         Self { a, b, top }
     }
 }
@@ -52,8 +56,11 @@ impl Curve<Line> for KochSnowflake {
                 .chunks(2).map(|line| {
                     let a = line[0];
                     let b = line[1];
-                    let a_to_b = b.position - a.position;
-                    Line::new(a, b, a_to_b.away_orthogonal(a.position))
+                    Line::new(
+                        a, b,
+                        a.position.away_orthogonal_to(b.position),
+                        (b.position - a.position).len() / Self::HEIGHT_DIVISOR,
+                    )
                 }).collect(),
                 None
             )],
@@ -69,42 +76,40 @@ impl Curve<Line> for KochSnowflake {
         last_lines.par_iter().map(|line| {
             let (a, b) = (line.a.position, line.b.position);
             let (a_iter, b_iter) = (line.a.iteration, line.b.iteration);
+            let top = line.top;
 
             let a_to_b = b - a;
 
             let third_a = a + ( a_to_b / Self::WIDTH_DIVISOR);
             let third_b = b + (-a_to_b / Self::WIDTH_DIVISOR);
 
-            let top = {
-                // with reduced length
-                let away_orthogonal = a_to_b.away_orthogonal(a) / Self::HEIGHT_DIVISOR;
-
-                a + (a_to_b / 2.) + away_orthogonal
-            };
-
             [
                 Line::new(
                     Vertex::new(a,       a_iter),
                     Vertex::new(third_a, a_iter),
                     Vec2::new(0., 0.),
+                    0.,
                 ),
 
                 Line::new(
                     Vertex::new(third_a, a_iter),
                     Vertex::new(top,     iteration),
                     Vec2::new(0., 0.),
+                    0.,
                 ),
 
                 Line::new(
                     Vertex::new(top,     iteration),
                     Vertex::new(third_b, b_iter),
                     Vec2::new(0., 0.),
+                    0.,
                 ),
 
                 Line::new(
                     Vertex::new(third_b, b_iter),
                     Vertex::new(b,       b_iter),
                     Vec2::new(0., 0.),
+                    0.,
                 ),
             ]
         }).flatten().collect()

@@ -26,6 +26,10 @@ impl Vec2 {
         (self.x.powf(2.) + self.y.powf(2.)).sqrt()
     }
 
+    pub fn norm(&self) -> Self {
+        self.map(|x| x / self.len())
+    }
+
     pub fn set_len(&self, len: f32) -> Self {
         let current_len= self.len();
 
@@ -42,18 +46,20 @@ impl Vec2 {
         self.x*rhs.x + self.y*rhs.y
     }
 
-    /// returns orthogonal that points away from the origin when placed at the given tail.
-    /// the orthogonal has same length as the original vector.
-    pub fn away_orthogonal(&self, tail: Self) -> Self {
+    /// returns normalized orthogonal that points away from the origin when placed at the starting point/vector
+    pub fn away_orthogonal_to(&self, b: Self) -> Self {
+        let a = *self;
+        let a_to_b = b - a;
+
         // we don't know if this points away from or towards the origin yet
-        let orthogonal = Vec2::new(-self.y, self.x);
+        let mut orthogonal = Vec2::new(-a_to_b.y, a_to_b.x);
 
         // if it points towards the origin, turn it around
-        if tail.dot_product(orthogonal) < 0. {
-            -orthogonal
-        } else {
-             orthogonal
-        }
+        if a.dot_product(orthogonal) < 0. {
+            orthogonal = -orthogonal;
+        };
+
+        orthogonal.norm()
     }
 }
 
