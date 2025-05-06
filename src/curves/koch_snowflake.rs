@@ -40,8 +40,8 @@ impl Curve for KochSnowflake {
         let last_vertices = self.data.last().unwrap();
 
         let iteration = self.data.len().try_into().unwrap();
-        if iteration >= 10 {
-            log::debug!("computing iteration {}", iteration);
+        if iteration >= 9 {
+            log::debug!("computing iteration {}", iteration + 1);
         }
 
         let vertices = last_vertices
