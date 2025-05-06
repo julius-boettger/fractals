@@ -38,22 +38,9 @@ impl Vec2 {
         normalized * len
     }
 
-    pub const fn dot_product(&self, rhs: Self) -> f32 {
-        self.x*rhs.x + self.y*rhs.y
-    }
-
-    /// returns orthogonal that points away from the origin when placed at the given tail.
-    /// the orthogonal has same length as the original vector.
-    pub fn away_orthogonal(&self, tail: Self) -> Self {
-        // we don't know if this points away from or towards the origin yet
-        let orthogonal = Vec2::new(-self.y, self.x);
-
-        // if it points towards the origin, turn it around
-        if tail.dot_product(orthogonal) < 0. {
-            -orthogonal
-        } else {
-             orthogonal
-        }
+    /// clockwise/+90° orthogonal vector of self with same length
+    pub const fn clockwise_orthogonal(&self) -> Self {
+        Vec2::new(self.y, -self.x)
     }
 }
 

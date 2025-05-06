@@ -17,15 +17,16 @@ impl KochSnowflake {
 impl Curve for KochSnowflake {
     fn new() -> Self {
         Self {
+            // always pointing counterclockwise to make orthogonals work later
             data: vec![vec![
                 Vertex::new(Vec2::new(-0.75, -0.45), 0),
                 Vertex::new(Vec2::new( 0.75, -0.45), 0),
 
-                Vertex::new(Vec2::new(-0.75, -0.45), 0),
-                Vertex::new(Vec2::new( 0.00,  0.75), 0),
-
                 Vertex::new(Vec2::new( 0.75, -0.45), 0),
                 Vertex::new(Vec2::new( 0.00,  0.75), 0),
+
+                Vertex::new(Vec2::new( 0.00,  0.75), 0),
+                Vertex::new(Vec2::new(-0.75, -0.45), 0),
             ]],
         }
     }
@@ -56,10 +57,11 @@ impl Curve for KochSnowflake {
                 let third_b = b + (-a_to_b / Self::WIDTH_DIVISOR);
 
                 let top = {
-                    // with reduced length
-                    let away_orthogonal = a_to_b.away_orthogonal(a) / Self::HEIGHT_DIVISOR;
+                    // this orthogonal always points in the right direction,
+                    // because our (initial) lines are counter-clockwise
+                    let up = a_to_b.clockwise_orthogonal() / Self::HEIGHT_DIVISOR;
 
-                    a + (a_to_b / 2.) + away_orthogonal
+                    a + (a_to_b / 2.) + up
                 };
 
                 [
