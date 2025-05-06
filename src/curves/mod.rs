@@ -1,4 +1,5 @@
 pub mod koch_snowflake;
+pub mod sierpinski_triangle;
 
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
