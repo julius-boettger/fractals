@@ -19,8 +19,8 @@ pub trait Curve<Component: CurveComponent> {
     {
         // compute fractal iterations (if not done already)
         for current_iteration in self.data().len() ..= iteration {
-            if current_iteration >= 10 {
-                log::debug!("computing iteration {}", current_iteration);
+            if current_iteration >= 9 {
+                log::debug!("computing iteration {}", current_iteration + 1);
             }
 
             let next_data = self.next_iteration(
