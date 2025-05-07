@@ -273,8 +273,8 @@ impl ApplicationHandler for App {
         // if (probably) profiling: exit here before entering the infinite event loop
         if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
             if value == "true" {
-                println!("detected environment variable CARGO_PROFILE_RELEASE_DEBUG=true");
-                println!("early-exiting now before entering event loop");
+                log::info!("detected environment variable CARGO_PROFILE_RELEASE_DEBUG=true");
+                log::info!("early-exiting now before entering event loop");
                 std::process::exit(0);
             }
         }
@@ -293,20 +293,19 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 if state.redraw {
                     match state.render() {
-                        // frame took to long to present
                         Err(wgpu::SurfaceError::Timeout) =>
-                            println!("surface timeout"),
+                            log::warn!("surface timeout (frame took too long to present)"),
 
                         Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
                             state.resize(state.size),
 
                         Err(wgpu::SurfaceError::OutOfMemory) => {
-                            eprintln!("out of memory");
+                            log::error!("out of memory");
                             event_loop.exit();
                         }
 
                         Err(wgpu::SurfaceError::Other) => {
-                            eprintln!("generic surface error");
+                            log::error!("generic surface error");
                             event_loop.exit();
                         }
 
