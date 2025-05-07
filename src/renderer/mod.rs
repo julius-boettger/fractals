@@ -25,6 +25,7 @@ struct UniformBufferContent {
 #[allow(dead_code)]
 struct State {
     surface: wgpu::Surface<'static>,
+    surface_configured: bool,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
@@ -37,8 +38,6 @@ struct State {
     uniform_buffer: wgpu::Buffer, 
     uniform_buffer_bind_group: wgpu::BindGroup,
     render_pipeline: wgpu::RenderPipeline,
-    /// whether the window should be redrawn
-    redraw: bool,
 }
 
 impl State {
@@ -53,6 +52,10 @@ impl State {
 
         // to display rendered images
         let surface = instance.create_surface(window.clone()).unwrap();
+
+        // will be set to true on first resize
+        let surface_configured = false;
+
 
         // handle to chosen gpu
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -187,11 +190,7 @@ impl State {
             cache: None,
         });
 
-
-        // will be set to true the first time when surface is configured by resizing
-        let redraw = false;
-
-        Self { surface, device, queue, config, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline, redraw }
+        Self { surface, surface_configured, device, queue, config, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -200,11 +199,16 @@ impl State {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
-            self.redraw = true;
+            self.surface_configured = true;
         }
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        // wait until surface has been configured
+        if !self.surface_configured {
+            return Ok(());
+        }
+
         // frame to render to
         let output = self.surface.get_current_texture()?;
 
@@ -291,33 +295,29 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::RedrawRequested => {
-                if state.redraw {
-                    match state.render() {
-                        Err(wgpu::SurfaceError::Timeout) =>
-                            log::warn!("surface timeout (frame took too long to present)"),
+                match state.render() {
+                    Err(wgpu::SurfaceError::Timeout) =>
+                        log::warn!("surface timeout (frame took too long to present)"),
 
-                        Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
-                            state.resize(state.size),
+                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
+                        state.resize(state.size),
 
-                        Err(wgpu::SurfaceError::OutOfMemory) => {
-                            log::error!("out of memory");
-                            event_loop.exit();
-                        }
-
-                        Err(wgpu::SurfaceError::Other) => {
-                            log::error!("generic surface error");
-                            event_loop.exit();
-                        }
-
-                        Ok(_) => ()
+                    Err(wgpu::SurfaceError::OutOfMemory) => {
+                        log::error!("out of memory");
+                        event_loop.exit();
                     }
 
-                    // tell winit that we want another frame after this one
-                    state.window.request_redraw();
+                    Err(wgpu::SurfaceError::Other) => {
+                        log::error!("generic surface error");
+                        event_loop.exit();
+                    }
 
-                    // only redraw once as we are rendering a still image
-                    state.redraw = false;
+                    Ok(_) => ()
                 }
+
+                // tell winit that we immediately want another frame after this one
+                // (commented out for now, as we are rendering a still image)
+                //state.window.request_redraw();
             }
 
             WindowEvent::CloseRequested => event_loop.exit(),
@@ -339,8 +339,12 @@ impl ApplicationHandler for App {
 
 pub fn render() {
     let event_loop = EventLoop::new().unwrap();
-    //event_loop.set_control_flow(ControlFlow::Poll);
-    event_loop.set_control_flow(ControlFlow::Wait);
+
+    let control_flow = ControlFlow
+        ::Wait; // for rendering still images
+        //::Poll; // for rendering moving images
+
+    event_loop.set_control_flow(control_flow);
 
     let mut app = App::default();
     event_loop.run_app(&mut app).unwrap();
