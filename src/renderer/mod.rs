@@ -13,6 +13,7 @@ use winit::{
 };
 
 use vertex::{Vertex, VertexFormat};
+use crate::curves::{Curve, InitialCurve, INITIAL_ITERATION};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
@@ -29,6 +30,8 @@ struct State {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    curve: Box<dyn Curve>,
+    iteration: usize,
     size: PhysicalSize<u32>,
     window: Arc<Window>,
     num_indices: u32,
@@ -41,7 +44,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: Arc<Window>, vertices: &Vec<Vertex>, vertex_format: VertexFormat) -> Self {
+    async fn new(window: Arc<Window>) -> Self {
         let size = window.inner_size();
 
         // to create surface and adapter
@@ -85,6 +88,11 @@ impl State {
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
+
+        let mut curve = Box::new(InitialCurve::new());
+        let iteration = INITIAL_ITERATION;
+        let vertex_format = curve.vertex_format();
+        let vertices = curve.vertices(iteration);
 
         let vertices = match vertex_format {
             VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
@@ -190,7 +198,7 @@ impl State {
             cache: None,
         });
 
-        Self { surface, surface_configured, device, queue, config, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline }
+        Self { surface, surface_configured, device, queue, config, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline }
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -263,15 +271,7 @@ impl ApplicationHandler for App {
                 .unwrap()
         );
 
-        use crate::curves::Curve;
-        type MyCurve = crate::curves::koch_snowflake::KochSnowflake;
-        const ITERATION: usize = 4;
-
-        let mut curve = MyCurve::new();
-        let vertices = curve.vertices(ITERATION);
-        let vertex_format = MyCurve::vertex_format();
-
-        let state = pollster::block_on(State::new(window.clone(), vertices, vertex_format));
+        let state = pollster::block_on(State::new(window.clone()));
         self.state = Some(state);
 
         // if (probably) profiling: exit here before entering the infinite event loop

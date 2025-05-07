@@ -3,10 +3,17 @@ pub mod sierpinski_triangle;
 
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
+pub type InitialCurve = koch_snowflake::KochSnowflake;
+pub const INITIAL_ITERATION: usize = 4;
+
 /// https://en.wikipedia.org/wiki/Fractal_curve
 pub trait Curve {
-    fn new() -> Self;
-    fn vertex_format() -> VertexFormat;
+    fn new() -> Self
+        where Self: Sized; // for dyn-compatability
+
+    // technically doesnt need to be a method, but is easier to work with
+    fn vertex_format(&self) -> VertexFormat;
+
     fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex>;
 
     /// one element for each iteration

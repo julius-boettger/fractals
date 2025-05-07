@@ -31,7 +31,7 @@ impl Curve for KochSnowflake {
         }
     }
 
-    fn vertex_format() -> VertexFormat { VertexFormat::Lines }
+    fn vertex_format(&self) -> VertexFormat { VertexFormat::Lines }
     
     fn     data(&    self) -> &    Vec<Vec<Vertex>> { &    self.data }
     fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>> { &mut self.data }
