@@ -1,13 +1,15 @@
 pub mod vertex;
 
+use std::sync::Arc;
 use rayon::prelude::*;
 use wgpu::util::DeviceExt;
 use winit::{
-    event::*,
+    event::{WindowEvent, KeyEvent, ElementState},
     dpi::PhysicalSize,
-    event_loop::EventLoop,
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::{KeyCode, PhysicalKey},
-    window::{Window, WindowBuilder},
+    window::{Window, WindowId},
+    application::ApplicationHandler,
 };
 
 use vertex::{Vertex, VertexFormat};
@@ -21,13 +23,13 @@ struct UniformBufferContent {
 }
 
 #[allow(dead_code)]
-struct State<'a> {
-    surface: wgpu::Surface<'a>,
+struct State {
+    surface: wgpu::Surface<'static>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
-    window: &'a Window,
+    window: Arc<Window>,
     num_indices: u32,
     uniform_buffer_content: UniformBufferContent, 
     vertex_buffer: wgpu::Buffer,
@@ -39,8 +41,8 @@ struct State<'a> {
     redraw: bool,
 }
 
-impl<'a> State<'a> {
-    async fn new(window: &'a Window, vertices: &Vec<Vertex>, vertex_format: VertexFormat) -> State<'a> {
+impl State {
+    async fn new(window: Arc<Window>, vertices: &Vec<Vertex>, vertex_format: VertexFormat) -> Self {
         let size = window.inner_size();
 
         // to create surface and adapter
@@ -50,7 +52,7 @@ impl<'a> State<'a> {
         });
 
         // to display rendered images
-        let surface = instance.create_surface(window).unwrap();
+        let surface = instance.create_surface(window.clone()).unwrap();
 
         // handle to chosen gpu
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -186,7 +188,8 @@ impl<'a> State<'a> {
         });
 
 
-        let redraw = true;
+        // will be set to true the first time when surface is configured by resizing
+        let redraw = false;
 
         Self { surface, device, queue, config, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline, redraw }
     }
@@ -242,86 +245,104 @@ impl<'a> State<'a> {
     }
 }
 
-pub async fn render(vertices: &Vec<Vertex>, vertex_format: VertexFormat) {
-    let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let mut state = State::new(&window, vertices, vertex_format).await;
+#[derive(Default)]
+struct App {
+    state: Option<State>,
+}
 
-    // only start rendering once surface is configured
-    let mut surface_configured = false;
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let window = Arc::new(
+            event_loop
+                .create_window(Window::default_attributes())
+                .unwrap()
+        );
 
-    // if (probably) profiling: exit here before entering the infinite event loop
-    if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
-        if value == "true" {
-            println!("detected environment variable CARGO_PROFILE_RELEASE_DEBUG=true");
-            println!("early-exiting now before entering event loop");
-            std::process::exit(0);
-        }
-    }
+        use crate::curves::Curve;
+        type MyCurve = crate::curves::koch_snowflake::KochSnowflake;
+        const ITERATION: usize = 4;
 
-    event_loop.run(move |event, control_flow|
-        if let Event::WindowEvent { ref event, window_id } = event {
-            if window_id == state.window.id() {
-                match event {
+        let mut curve = MyCurve::new();
+        let vertices = curve.vertices(ITERATION);
+        let vertex_format = MyCurve::vertex_format();
 
-                    WindowEvent::Resized(physical_size) => {
-                        // this also (re)configures the surface 
-                        state.resize(*physical_size);
-                        surface_configured = true;
-                    }
+        let state = pollster::block_on(State::new(window.clone(), vertices, vertex_format));
+        self.state = Some(state);
 
-                    WindowEvent::RedrawRequested => {
-                        if state.redraw {
-                            // tell winit that we want another frame after this one
-                            state.window.request_redraw();
-
-                            // dont try to render when surface is not configured yet
-                            if !surface_configured {
-                                return;
-                            }
-
-                            match state.render() {
-                                // frame took to long to present
-                                Err(wgpu::SurfaceError::Timeout) =>
-                                    println!("surface timeout"),
-
-                                Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
-                                    state.resize(state.size),
-
-                                Err(wgpu::SurfaceError::OutOfMemory) => {
-                                    eprintln!("out of memory");
-                                    control_flow.exit();
-                                }
-
-                                Err(wgpu::SurfaceError::Other) => {
-                                    eprintln!("generic surface error");
-                                    control_flow.exit();
-                                }
-
-                                Ok(_) => ()
-                            }
-
-                            // only redraw once as we are rendering a still image
-                            state.redraw = false;
-                        }
-                    }
-
-                    WindowEvent::CloseRequested => control_flow.exit(),
-
-                    // exit on ESC or Q
-                    WindowEvent::KeyboardInput {
-                        event: KeyEvent {
-                            state: ElementState::Pressed,
-                            physical_key: PhysicalKey::Code(KeyCode::Escape | KeyCode::KeyQ),
-                            ..
-                        },
-                        ..
-                    } => control_flow.exit(),
-
-                    _ => ()
-                }
+        // if (probably) profiling: exit here before entering the infinite event loop
+        if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
+            if value == "true" {
+                println!("detected environment variable CARGO_PROFILE_RELEASE_DEBUG=true");
+                println!("early-exiting now before entering event loop");
+                std::process::exit(0);
             }
         }
-    ).unwrap();
+
+        window.request_redraw();
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+        let state = self.state.as_mut().unwrap();
+        match event {
+            WindowEvent::Resized(physical_size) => {
+                // this also (re)configures the surface 
+                state.resize(physical_size);
+            }
+
+            WindowEvent::RedrawRequested => {
+                if state.redraw {
+                    match state.render() {
+                        // frame took to long to present
+                        Err(wgpu::SurfaceError::Timeout) =>
+                            println!("surface timeout"),
+
+                        Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) =>
+                            state.resize(state.size),
+
+                        Err(wgpu::SurfaceError::OutOfMemory) => {
+                            eprintln!("out of memory");
+                            event_loop.exit();
+                        }
+
+                        Err(wgpu::SurfaceError::Other) => {
+                            eprintln!("generic surface error");
+                            event_loop.exit();
+                        }
+
+                        Ok(_) => ()
+                    }
+
+                    // tell winit that we want another frame after this one
+                    state.window.request_redraw();
+
+                    // only redraw once as we are rendering a still image
+                    state.redraw = false;
+                }
+            }
+
+            WindowEvent::CloseRequested => event_loop.exit(),
+
+            // exit on ESC or Q
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    state: ElementState::Pressed,
+                    physical_key: PhysicalKey::Code(KeyCode::Escape | KeyCode::KeyQ),
+                    ..
+                },
+                ..
+            } => event_loop.exit(),
+
+            _ => (),
+        }
+    }
+}
+
+pub fn render() {
+    let event_loop = EventLoop::new().unwrap();
+    //event_loop.set_control_flow(ControlFlow::Poll);
+    event_loop.set_control_flow(ControlFlow::Wait);
+
+    let mut app = App::default();
+    event_loop.run_app(&mut app).unwrap();
 }

@@ -7,7 +7,7 @@ edition = "2021"
 wgpu = "25.0.0" # graphics library using webgpu
 env_logger = "0.11.8" # logging implementation, required to see what wgpu is doing
 log = "0.4.27" # logging api, for own logging (with env_logger as implementation)
-winit = { version = "0.29.15", features = ["rwh_05"] } # windowing
+winit = "0.30.10" # windowing
 pollster = "0.4.0" # lightweight async runtime
 bytemuck = { version = "1.23.0", features = ["derive"] } # simple (bitwise) type casting
 rayon = "1.10.0" # parallel iterators for simple parallelization
