@@ -8,6 +8,11 @@
   5th iteration of <a href="https://en.wikipedia.org/wiki/Koch_snowflake">Koch snowflake</a> (left) and <a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle">Sierpinski triangle</a> (right)
 </p>
 
+## Controls
+
+- `↑`/`↓`: Increase/decrease fractal iteration
+- `←`/`→`: Cycle through different fractals
+
 ## Run it yourself
 
 Using [Nix Flakes](https://nixos.wiki/wiki/flakes) (probably only works on Wayland):
