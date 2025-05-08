@@ -16,14 +16,13 @@ use vertex::{Vertex, VertexFormat};
 use crate::curves::{Curve, InitialCurve, INITIAL_ITERATION};
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
+#[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
 // note that types were chosen to correspond to the few available options in WGSL
 struct UniformBufferContent {
     /// highest iteration value present in the current vertices
     max_iteration: u32,
 }
 
-#[allow(dead_code)]
 struct State {
     surface: wgpu::Surface<'static>,
     surface_configured: bool,
@@ -36,8 +35,8 @@ struct State {
     window: Arc<Window>,
     num_indices: u32,
     uniform_buffer_content: UniformBufferContent, 
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer, 
+    vertex_buffer: Option<wgpu::Buffer>,
+    index_buffer: Option<wgpu::Buffer>, 
     uniform_buffer: wgpu::Buffer, 
     uniform_buffer_bind_group: wgpu::BindGroup,
     render_pipeline: wgpu::RenderPipeline,
@@ -89,50 +88,15 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        let mut curve = Box::new(InitialCurve::new());
+        let curve = Box::new(InitialCurve::new());
         let iteration = INITIAL_ITERATION;
-        let vertex_format = curve.vertex_format();
-        let vertices = curve.vertices(iteration);
-
-        let vertices = match vertex_format {
-            VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
-            VertexFormat::Triangles => vertices,
-        };
-
-        let (vertices, indices) = vertex::index(&vertices);
-
-        let num_indices = indices.len().try_into().unwrap();
-
-        let uniform_buffer_content = UniformBufferContent {
-            max_iteration: vertices.par_iter()
-                .map(|v| v.iteration)
-                .max()
-                .unwrap()
-        };
-
-        // bytemuck cast to slice of bytes
-        let vertices = bytemuck::cast_slice(vertices.as_slice());
-
-        if vertices.len() > device.limits().max_buffer_size as usize {
-            log::error!("computed vertices are too large to buffer on this device");
-            std::process::exit(1);
-        }
-
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("vertex buffer"),
-            usage: wgpu::BufferUsages::VERTEX,
-            contents: vertices,
-        });
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("index buffer"),
-            usage: wgpu::BufferUsages::INDEX,
-            contents: bytemuck::cast_slice(indices.as_slice()),
-        });
+        let num_indices = Default::default();
+        let uniform_buffer_content = Default::default();
+        let vertex_buffer = None;
+        let index_buffer = None;
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("uniform buffer"),
-            // + COPY_DST to allow easier content updating
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             contents: bytemuck::cast_slice(&[uniform_buffer_content]),
         });
@@ -198,7 +162,9 @@ impl State {
             cache: None,
         });
 
-        Self { surface, surface_configured, device, queue, config, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline }
+        let mut state = Self { surface, surface_configured, device, queue, config, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        state.update_buffers();
+        state
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -209,6 +175,51 @@ impl State {
             self.surface.configure(&self.device, &self.config);
             self.surface_configured = true;
         }
+    }
+
+    fn update_buffers(&mut self) {
+        let vertex_format = self.curve.vertex_format();
+        let vertices = self.curve.vertices(self.iteration);
+
+        let vertices = match vertex_format {
+            VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
+            VertexFormat::Triangles => vertices,
+        };
+
+        let (vertices, indices) = vertex::index(&vertices);
+
+        self.num_indices = indices.len().try_into().unwrap();
+
+        self.uniform_buffer_content.max_iteration = vertices.par_iter()
+            .map(|v| v.iteration)
+            .max()
+            .unwrap();
+
+        // cast buffer data to slice of bytes
+        use bytemuck::cast_slice;
+        let vertices = cast_slice(vertices.as_slice());
+        let indices = cast_slice(indices.as_slice());
+
+        if vertices.len() > self.device.limits().max_buffer_size as usize {
+            log::error!("computed vertices are too large to buffer on this device");
+            std::process::exit(1);
+        }
+
+        self.vertex_buffer = Some(self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("vertex buffer"),
+            usage: wgpu::BufferUsages::VERTEX,
+            contents: vertices,
+        }));
+
+        self.index_buffer = Some(self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("index buffer"),
+            usage: wgpu::BufferUsages::INDEX,
+            contents: indices,
+        }));
+
+        self.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(&[self.uniform_buffer_content]));
+
+        self.window.request_redraw();
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -242,8 +253,8 @@ impl State {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.uniform_buffer_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap().slice(..));
+        render_pass.set_index_buffer(self.index_buffer.as_ref().unwrap().slice(..), wgpu::IndexFormat::Uint32);
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
 
         // free encoder borrow
@@ -289,10 +300,31 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         let state = self.state.as_mut().unwrap();
         match event {
-            WindowEvent::Resized(physical_size) => {
-                // this also (re)configures the surface 
-                state.resize(physical_size);
-            }
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    state: ElementState::Pressed,
+                    physical_key: PhysicalKey::Code(KeyCode::ArrowUp),
+                    ..
+                },
+                ..
+            } => {
+                state.iteration += 1;
+                state.update_buffers();
+            },
+
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    state: ElementState::Pressed,
+                    physical_key: PhysicalKey::Code(KeyCode::ArrowDown),
+                    ..
+                },
+                ..
+            } => {
+                if state.iteration > 0 {
+                    state.iteration -= 1;
+                    state.update_buffers();
+                }
+            },
 
             WindowEvent::RedrawRequested => {
                 match state.render() {
@@ -320,17 +352,12 @@ impl ApplicationHandler for App {
                 //state.window.request_redraw();
             }
 
-            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::Resized(physical_size) => {
+                // this also (re)configures the surface 
+                state.resize(physical_size);
+            }
 
-            // exit on ESC or Q
-            WindowEvent::KeyboardInput {
-                event: KeyEvent {
-                    state: ElementState::Pressed,
-                    physical_key: PhysicalKey::Code(KeyCode::Escape | KeyCode::KeyQ),
-                    ..
-                },
-                ..
-            } => event_loop.exit(),
+            WindowEvent::CloseRequested => event_loop.exit(),
 
             _ => (),
         }

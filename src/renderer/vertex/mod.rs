@@ -46,7 +46,6 @@ pub enum VertexFormat {
     /// groups of two to form lines
     Lines,
     /// groups of three to form triangles
-    #[allow(dead_code)]
     Triangles,
 }
 
