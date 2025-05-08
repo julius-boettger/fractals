@@ -298,28 +298,27 @@ impl ApplicationHandler for App {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+        macro_rules! key_pressed {
+            ($key:ident) => {
+                WindowEvent::KeyboardInput {
+                    event: KeyEvent {
+                        state: ElementState::Pressed,
+                        physical_key: PhysicalKey::Code(KeyCode::$key),
+                        ..
+                    },
+                    ..
+                }
+            };
+        }
+
         let state = self.state.as_mut().unwrap();
         match event {
-            WindowEvent::KeyboardInput {
-                event: KeyEvent {
-                    state: ElementState::Pressed,
-                    physical_key: PhysicalKey::Code(KeyCode::ArrowUp),
-                    ..
-                },
-                ..
-            } => {
+            key_pressed!(ArrowUp) => {
                 state.iteration += 1;
                 state.update_buffers();
             },
 
-            WindowEvent::KeyboardInput {
-                event: KeyEvent {
-                    state: ElementState::Pressed,
-                    physical_key: PhysicalKey::Code(KeyCode::ArrowDown),
-                    ..
-                },
-                ..
-            } => {
+            key_pressed!(ArrowDown) => {
                 if state.iteration > 0 {
                     state.iteration -= 1;
                     state.update_buffers();
