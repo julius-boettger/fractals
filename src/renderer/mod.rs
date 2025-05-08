@@ -13,7 +13,7 @@ use winit::{
 };
 
 use vertex::{Vertex, VertexFormat};
-use crate::curves::{Curve, InitialCurve, INITIAL_ITERATION};
+use crate::curves::{Curve, CURVES, INITIAL_ITERATION};
 
 #[repr(C)]
 #[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
@@ -29,6 +29,7 @@ struct State {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    curve_index: usize,
     curve: Box<dyn Curve>,
     iteration: usize,
     size: PhysicalSize<u32>,
@@ -88,7 +89,8 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        let curve = Box::new(InitialCurve::new());
+        let curve_index = 0;
+        let curve = CURVES[curve_index]();
         let iteration = INITIAL_ITERATION;
         let num_indices = Default::default();
         let uniform_buffer_content = Default::default();
@@ -162,7 +164,7 @@ impl State {
             cache: None,
         });
 
-        let mut state = Self { surface, surface_configured, device, queue, config, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        let mut state = Self { surface, surface_configured, device, queue, config, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
         state.update_buffers();
         state
     }
@@ -323,6 +325,28 @@ impl ApplicationHandler for App {
                     state.iteration -= 1;
                     state.update_buffers();
                 }
+            },
+
+            key_pressed!(ArrowLeft) => {
+                state.curve_index = if state.curve_index == 0 {
+                    CURVES.len() - 1
+                } else {
+                    state.curve_index - 1
+                };
+                state.curve = CURVES[state.curve_index]();
+                state.iteration = INITIAL_ITERATION;
+                state.update_buffers();
+            },
+
+            key_pressed!(ArrowRight) => {
+                state.curve_index = if state.curve_index == CURVES.len() - 1 {
+                    0   
+                } else {
+                    state.curve_index + 1
+                };
+                state.curve = CURVES[state.curve_index]();
+                state.iteration = INITIAL_ITERATION;
+                state.update_buffers();
             },
 
             WindowEvent::RedrawRequested => {

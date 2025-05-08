@@ -3,8 +3,14 @@ pub mod sierpinski_triangle;
 
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
-pub type InitialCurve = koch_snowflake::KochSnowflake;
 pub const INITIAL_ITERATION: usize = 4;
+
+/// slice of functions to get new curve of each implementing struct.
+/// first element will be the initial curve rendered.
+pub const CURVES: &[fn() -> Box<dyn Curve>] = &[
+    || Box::new(koch_snowflake::KochSnowflake::new()),
+    || Box::new(sierpinski_triangle::SierpinskiTriangle::new()),
+];
 
 /// https://en.wikipedia.org/wiki/Fractal_curve
 pub trait Curve {
