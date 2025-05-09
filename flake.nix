@@ -13,6 +13,9 @@
       overlays = [ (import rust-overlay) ];
     }));
 
+    # for cross-compiling to windows
+    cross-target = "x86_64-w64-mingw32";
+
     runtimeDeps = pkgs: with pkgs; [
       # for winit (https://github.com/rust-windowing/winit/issues/3244)
       wayland
@@ -38,18 +41,8 @@
       };
     });
 
-    devShells = eachSystem (system: pkgs: 
-    let
-      # for cross-compiling to windows
-      cross-pkgs = import nixpkgs {
-        inherit system;
-        crossSystem.config = "x86_64-w64-mingw32";
-      };
-    in
-    {
-      # shell needs to be from cross-pkgs so that pthreads build input
-      # gets picked up correctly when cross-compiling to windows
-      default = cross-pkgs.mkShell {
+    devShells = eachSystem (system: pkgs: {
+      default = pkgs.mkShell {
         # make sure runtime dependencies get picked up
         # buildInputs doesnt work, see https://github.com/rust-windowing/winit/issues/3244
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (runtimeDeps pkgs);
@@ -74,10 +67,24 @@
         RUST_BACKTRACE = 1;
 
         # for cross-compiling to windows
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${cross-pkgs.stdenv.cc}/bin/${cross-pkgs.stdenv.cc.targetPrefix}cc";
-        # only necessary during final linking of executable with mingw
-        # when cross-compiling, causes problems for compilation when enabled before
-        #buildInputs = [ cross-pkgs.windows.pthreads ];
+        # tell cargo to use linker from other nix dev shell
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.writeShellScriptBin "cross-linker" ''
+          nix develop .#cross-linker -c ${cross-target}-cc "$@"
+        ''}/bin/cross-linker";
+      };
+
+      # for cross-compiling to windows.
+      # using a second dev shell was the easiest way i found to make the required
+      # pthreads library accessible to the required mingw linker running under wine
+      cross-linker = let
+        cross-pkgs = import nixpkgs {
+          inherit system;
+          crossSystem.config = cross-target;
+        };
+      in cross-pkgs.mkShell {
+        buildInputs = [
+          cross-pkgs.windows.pthreads
+        ];
       };
     });
   };
