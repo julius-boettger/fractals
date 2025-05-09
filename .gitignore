@@ -2,4 +2,5 @@
 /result
 /target
 /flamegraph.svg
+/fractals-*
 /perf.data*

@@ -56,6 +56,14 @@
             targets = [ "x86_64-pc-windows-gnu" ];
           })
 
+          # convenient command to build release binaries for x86_64 linux and windows
+          (pkgs.writeShellScriptBin "release" ''
+            cargo build --release --target x86_64-unknown-linux-gnu || exit 1
+            cp target/x86_64-unknown-linux-gnu/release/fractals fractals-linux-x86_64
+            cargo build --release --target x86_64-pc-windows-gnu || exit 1
+            cp target/x86_64-pc-windows-gnu/release/fractals.exe fractals-windows-x86_64.exe
+          '')
+
           cargo-edit # provides `cargo upgrade` for dependencies
           cargo-flamegraph # provides `cargo flamegraph` for profiling
                            # best used with CARGO_PROFILE_RELEASE_DEBUG=true
