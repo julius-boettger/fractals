@@ -10,8 +10,9 @@
 
 ## Controls
 
-- `↑`/`↓`: Increase/decrease fractal iteration
 - `←`/`→`: Cycle through different fractals
+- `↑`/`↓`: Increase/decrease fractal iteration
+  - ⚠️ Careful: Memory usage increases exponentially with every iteration increase. When you eventually run out of memory, your operating system will (hopefully) attempt to prevent itself from crashing by killing this process.
 
 ## Run it yourself
 
