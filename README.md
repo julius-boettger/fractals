@@ -14,16 +14,20 @@
 - `↑`/`↓`: Increase/decrease fractal iteration
   - ⚠️ Careful: Memory usage increases exponentially with every iteration increase. When you eventually run out of memory, your operating system will (hopefully) attempt to prevent itself from crashing by killing this process.
 
-## Run it yourself
+## Installation
 
-Using [Nix Flakes](https://nixos.wiki/wiki/flakes) (probably only works on Wayland):
+### Download and run the [latest release](https://github.com/julius-boettger/fractals/releases/latest) (if available for your platform).
+
+You can also quickly try it out on Linux using [Nix Flakes](https://wiki.nixos.org/wiki/Flakes) (probably only works on Wayland):
 ```sh
 nix run github:julius-boettger/fractals
 ```
 
-Using [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
+### Or compile it yourself with [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 ```sh
 git clone https://github.com/julius-boettger/fractals
 cd fractals
-cargo run
+cargo build --release
 ```
+
+Now you should have a `fractals` (or `fractals.exe`) executable binary in `target/release/` that you can run.
