@@ -11,3 +11,4 @@ winit = "0.30.10" # windowing
 pollster = "0.4.0" # lightweight async runtime
 bytemuck = { version = "1.23.0", features = ["derive"] } # simple (bitwise) type casting
 rayon = "1.10.0" # parallel iterators for simple parallelization
+image = "0.25.6" # to load window icon

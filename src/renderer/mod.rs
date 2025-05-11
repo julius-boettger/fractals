@@ -8,7 +8,7 @@ use winit::{
     dpi::PhysicalSize,
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::{KeyCode, PhysicalKey},
-    window::{Window, WindowId},
+    window::{Window, WindowId, Icon},
     application::ApplicationHandler,
 };
 
@@ -278,10 +278,20 @@ struct App {
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let window = Arc::new(
-            event_loop
-                .create_window(Window::default_attributes())
+        let icon = {
+            let image = image::open("res/icon/32x32.png")
                 .unwrap()
+                .into_rgba8();
+            let (width, height) = image.dimensions();
+            Icon::from_rgba(image.into_raw(), width, height).unwrap()
+        };
+
+        let window = Arc::new(
+            event_loop.create_window(
+                Window::default_attributes()
+                    .with_title("Fractals")
+                    .with_window_icon(Some(icon))
+            ).unwrap()
         );
 
         let state = pollster::block_on(State::new(window.clone()));
