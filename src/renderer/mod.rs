@@ -278,19 +278,21 @@ struct App {
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let icon = {
-            let image = image::open("res/icon/32x32.png")
-                .unwrap()
-                .into_rgba8();
-            let (width, height) = image.dimensions();
-            Icon::from_rgba(image.into_raw(), width, height).unwrap()
+        // use icon if available
+        let icon = match image::open("res/icon/32x32.png") {
+            Err(_) => None,
+            Ok(image) => {
+                let image = image.into_rgba8();
+                let (width, height) = image.dimensions();
+                Some(Icon::from_rgba(image.into_raw(), width, height).unwrap())
+            }
         };
 
         let window = Arc::new(
             event_loop.create_window(
                 Window::default_attributes()
                     .with_title("Fractals")
-                    .with_window_icon(Some(icon))
+                    .with_window_icon(icon)
             ).unwrap()
         );
 
