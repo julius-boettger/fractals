@@ -2,6 +2,7 @@
 name = "fractals"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 wgpu = "25.0.0" # graphics library using webgpu
@@ -12,3 +13,6 @@ pollster = "0.4.0" # lightweight async runtime
 bytemuck = { version = "1.23.0", features = ["derive"] } # simple (bitwise) type casting
 rayon = "1.10.0" # parallel iterators for simple parallelization
 image = "0.25.6" # to load window icon
+
+[build-dependencies]
+winresource = "0.1.20" # set icon of .exe on windows
