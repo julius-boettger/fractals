@@ -9,12 +9,10 @@
   outputs = { self, nixpkgs, systems, rust-overlay, ... }:
   let
     eachSystem = fn: nixpkgs.lib.genAttrs (import systems) (system: fn system (import nixpkgs {
-      inherit system;
-      overlays = [ (import rust-overlay) ];
+      inherit system overlays;
     }));
 
-    # for cross-compiling to windows
-    cross-target = "x86_64-w64-mingw32";
+    overlays = [ rust-overlay.overlays.default ];
 
     runtimeDeps = pkgs: with pkgs; [
       # for winit (https://github.com/rust-windowing/winit/issues/3244)
@@ -51,16 +49,26 @@
           (rust-bin.stable.latest.default.override {
             # fix rust-analyzer in vscode
             extensions = [ "rust-src" ];
-            # cross-compile to windows with
-            # cargo build --release --target x86_64-pc-windows-gnu
+            # necessary for first command of build-windows, see comment below
             targets = [ "x86_64-pc-windows-gnu" ];
           })
 
+          # convenient command to cross-compile to windows in second nix dev shell.
+          # first command (attempt build in current shell) is necessary to compile
+          # some crates that require the x86_64-pc-windows-gnu toolchain,
+          # which I was not able to set up in the second nix dev shell.
+          (pkgs.writeShellScriptBin "build-windows" ''
+                                           cargo build --target x86_64-pc-windows-gnu "$@"
+            nix develop .#cross-windows -c cargo build --target x86_64-pc-windows-gnu "$@"
+          '')
+
           # convenient command to build release binaries for x86_64 linux and windows
           (pkgs.writeShellScriptBin "release" ''
+            rm -rf fractals-linux-x86_64
+            rm -rf fractals-windows-x86_64.exe
             cargo build --release --target x86_64-unknown-linux-gnu || exit 1
             cp target/x86_64-unknown-linux-gnu/release/fractals fractals-linux-x86_64
-            cargo build --release --target x86_64-pc-windows-gnu || exit 1
+            build-windows --release || exit 1
             cp target/x86_64-pc-windows-gnu/release/fractals.exe fractals-windows-x86_64.exe
           '')
 
@@ -73,27 +81,24 @@
         RUST_LOG = "error,fractals=trace";
         # display backtrace
         RUST_BACKTRACE = 1;
-
-        # for cross-compiling to windows
-        # tell cargo to use linker from other nix dev shell
-        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.writeShellScriptBin "cross-linker" ''
-          nix develop .#cross-linker -c ${cross-target}-cc "$@"
-        ''}/bin/cross-linker";
       };
 
-      # for cross-compiling to windows.
-      # using a second dev shell was the easiest way i found to make the required
-      # pthreads library accessible to the required mingw linker running under wine
-      cross-linker = let
+      # for cross-compiling to windows using mingw compiler with wine
+      cross-windows = let
         cross-pkgs = import nixpkgs {
-          inherit system;
-          crossSystem.config = cross-target;
+          inherit system overlays;
+          crossSystem.config = "x86_64-w64-mingw32";
         };
-      in cross-pkgs.mkShell {
-        buildInputs = [
-          cross-pkgs.windows.pthreads
-        ];
-      };
+      # callPackage is necessary (https://github.com/NixOS/nixpkgs/issues/49526)
+      in cross-pkgs.callPackage (
+        { mkShell, rust-bin, windows, stdenv }:
+        mkShell {
+          nativeBuildInputs = [ rust-bin.stable.latest.minimal ];
+          # necessary for cargo to work
+          buildInputs = [ windows.pthreads ];
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${stdenv.cc.targetPrefix}cc";
+        }
+      ) {};
     });
   };
 }
