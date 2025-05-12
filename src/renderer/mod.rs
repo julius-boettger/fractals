@@ -17,6 +17,9 @@ use crate::curves::{Curve, CURVES, INITIAL_ITERATION};
 
 // store icon in executable so we can still distribute just a single file
 const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
+/// how many seconds a cycle of dynamic updates should take.
+/// must be < 60.
+const DYNAMIC_UPDATE_CYCLE_SECS: f32 = 5.;
 
 #[repr(C)]
 #[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
@@ -30,17 +33,26 @@ struct UniformBufferContent {
 
 impl UniformBufferContent {
     fn update_dynamic_value(&mut self) {
-        // of current system time, in range [0.0, 1.0)
-        let nanoseconds = {
+        let seconds = {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap();
-            now.subsec_nanos() as f32 * 1e-9
+    
+            // in seconds, in range [0.0, 1.0)
+            let nanoseconds = now.subsec_nanos() as f32 * 1e-9;
+            // in range [0, 60)
+            let seconds = now.as_secs() % 60;
+
+            seconds as f32 + nanoseconds
         };
+
+        // make one cycle `DYNAMIC_UPDATE_CYCLE_SECS` long
+        // in range [0.0, 1.0)
+        let normalized_time = (seconds % DYNAMIC_UPDATE_CYCLE_SECS) / DYNAMIC_UPDATE_CYCLE_SECS;
 
         // smoothly changing value in range [0.0, 1.0)
         use std::f32::consts::PI;
-        self.dynamic_value = ((nanoseconds * 2. * PI).sin() + 1.) / 2.;
+        self.dynamic_value = ((normalized_time * 2. * PI).sin() + 1.) / 2.;
     }
 }
 
