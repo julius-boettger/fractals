@@ -4,12 +4,12 @@ use std::sync::Arc;
 use rayon::prelude::*;
 use wgpu::util::DeviceExt;
 use winit::{
-    event::{WindowEvent, KeyEvent, ElementState},
+    application::ApplicationHandler,
     dpi::PhysicalSize,
+    event::{ElementState, KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::{KeyCode, PhysicalKey},
-    window::{Window, WindowId, Icon},
-    application::ApplicationHandler,
+    window::{Icon, Window, WindowId}
 };
 
 use vertex::{Vertex, VertexFormat};
@@ -50,6 +50,7 @@ struct State {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    dynamic_update: bool,
     curve_index: usize,
     curve: Box<dyn Curve>,
     iteration: usize,
@@ -65,6 +66,9 @@ struct State {
 }
 
 impl State {
+
+    const INITIAL_DYNAMIC_UPDATE: bool = true;
+
     async fn new(window: Arc<Window>) -> Self {
         let size = window.inner_size();
 
@@ -110,6 +114,7 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
+        let dynamic_update = Self::INITIAL_DYNAMIC_UPDATE;
         let curve_index = 0;
         let curve = CURVES[curve_index]();
         let iteration = INITIAL_ITERATION;
@@ -185,7 +190,7 @@ impl State {
             cache: None,
         });
 
-        let mut state = Self { surface, surface_configured, device, queue, config, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        let mut state = Self { surface, surface_configured, device, queue, config, dynamic_update, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
         state.update_buffers();
         state
     }
@@ -198,6 +203,13 @@ impl State {
             self.surface.configure(&self.device, &self.config);
             self.surface_configured = true;
         }
+    }
+
+    fn set_control_flow(&self, event_loop: &ActiveEventLoop) {
+        event_loop.set_control_flow(match self.dynamic_update {
+            true  => ControlFlow::Poll, // for rendering moving images
+            false => ControlFlow::Wait, // for rendering still images
+        });
     }
 
     fn initialize_curve(&mut self) {
@@ -251,7 +263,12 @@ impl State {
             contents: indices,
         }));
 
-        // uniform buffer will be updated later in the loop either way
+
+        if self.dynamic_update {
+            // uniform buffer will be updated later in the loop either way
+        } else {
+            self.update_uniform_buffer();
+        }
 
         self.window.request_redraw();
     }
@@ -310,11 +327,13 @@ struct App {
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let image = image::load_from_memory(ICON_32_BYTES)
-            .unwrap()
-            .into_rgba8();
-        let (width, height) = image.dimensions();
-        let icon = Icon::from_rgba(image.into_raw(), width, height).unwrap();
+        let icon = {
+            let image = image::load_from_memory(ICON_32_BYTES)
+                .unwrap()
+                .into_rgba8();
+            let (width, height) = image.dimensions();
+            Icon::from_rgba(image.into_raw(), width, height).unwrap()
+        };
 
         let window = Arc::new(
             event_loop.create_window(
@@ -325,7 +344,8 @@ impl ApplicationHandler for App {
         );
 
         let state = pollster::block_on(State::new(window.clone()));
-        self.state = Some(state);
+
+        state.set_control_flow(event_loop);
 
         // if (probably) profiling: exit here before entering the infinite event loop
         if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
@@ -337,6 +357,8 @@ impl ApplicationHandler for App {
         }
 
         window.request_redraw();
+
+        self.state = Some(state);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -385,9 +407,25 @@ impl ApplicationHandler for App {
                 state.initialize_curve();
             },
 
+            key_pressed!(Space) => {
+                if state.dynamic_update {
+                    state.dynamic_update = false;
+                    state.uniform_buffer_content.dynamic_value = 0.;
+                    state.update_uniform_buffer();
+                } else {
+                    state.dynamic_update = true;
+                    // to jump-start constantly rendering new frames again
+                    state.window.request_redraw();
+                }
+
+                state.set_control_flow(event_loop);
+            },
+
             WindowEvent::RedrawRequested => {
-                state.uniform_buffer_content.update_dynamic_value();
-                state.update_uniform_buffer();
+                if state.dynamic_update {
+                    state.uniform_buffer_content.update_dynamic_value();
+                    state.update_uniform_buffer();
+                }
 
                 match state.render() {
                     Err(wgpu::SurfaceError::Timeout) =>
@@ -409,8 +447,11 @@ impl ApplicationHandler for App {
                     Ok(_) => ()
                 }
 
-                // tell winit that we immediately want another frame after this one
-                state.window.request_redraw();
+                if state.dynamic_update {
+                    // tell winit that we immediately want another frame after this one,
+                    // as we are rendering a moving image
+                    state.window.request_redraw();
+                }
             }
 
             WindowEvent::Resized(physical_size) => {
@@ -427,13 +468,6 @@ impl ApplicationHandler for App {
 
 pub fn render() {
     let event_loop = EventLoop::new().unwrap();
-
-    let control_flow = ControlFlow
-        //::Wait; // for rendering still images
-        ::Poll; // for rendering moving images
-
-    event_loop.set_control_flow(control_flow);
-
     let mut app = App::default();
     event_loop.run_app(&mut app).unwrap();
 }
