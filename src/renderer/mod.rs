@@ -15,6 +15,9 @@ use winit::{
 use vertex::{Vertex, VertexFormat};
 use crate::curves::{Curve, CURVES, INITIAL_ITERATION};
 
+// store icon in executable so we can still distribute just a single file
+const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
+
 #[repr(C)]
 #[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
 // note that types were chosen to correspond to the few available options in WGSL
@@ -278,21 +281,17 @@ struct App {
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        // use icon if available
-        let icon = match image::open("res/icon/32x32.png") {
-            Err(_) => None,
-            Ok(image) => {
-                let image = image.into_rgba8();
-                let (width, height) = image.dimensions();
-                Some(Icon::from_rgba(image.into_raw(), width, height).unwrap())
-            }
-        };
+        let image = image::load_from_memory(ICON_32_BYTES)
+            .unwrap()
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let icon = Icon::from_rgba(image.into_raw(), width, height).unwrap();
 
         let window = Arc::new(
             event_loop.create_window(
                 Window::default_attributes()
                     .with_title("Fractals")
-                    .with_window_icon(icon)
+                    .with_window_icon(Some(icon))
             ).unwrap()
         );
 
