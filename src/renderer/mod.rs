@@ -182,6 +182,17 @@ impl State {
         }
     }
 
+    fn initialize_curve(&mut self) {
+        self.curve = CURVES[self.curve_index]();
+        self.iteration = INITIAL_ITERATION;
+        self.update_buffers();
+    }
+
+    fn update_uniform_buffer(&mut self) {
+        self.queue.write_buffer(&self.uniform_buffer, 0,
+            bytemuck::cast_slice(&[self.uniform_buffer_content]));
+    }
+
     fn update_buffers(&mut self) {
         let vertex_format = self.curve.vertex_format();
         let vertices = self.curve.vertices(self.iteration);
@@ -222,7 +233,7 @@ impl State {
             contents: indices,
         }));
 
-        self.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(&[self.uniform_buffer_content]));
+        self.update_uniform_buffer();
 
         self.window.request_redraw();
     }
@@ -344,9 +355,7 @@ impl ApplicationHandler for App {
                 } else {
                     state.curve_index - 1
                 };
-                state.curve = CURVES[state.curve_index]();
-                state.iteration = INITIAL_ITERATION;
-                state.update_buffers();
+                state.initialize_curve();
             },
 
             key_pressed!(ArrowRight) => {
@@ -355,9 +364,7 @@ impl ApplicationHandler for App {
                 } else {
                     state.curve_index + 1
                 };
-                state.curve = CURVES[state.curve_index]();
-                state.iteration = INITIAL_ITERATION;
-                state.update_buffers();
+                state.initialize_curve();
             },
 
             WindowEvent::RedrawRequested => {
