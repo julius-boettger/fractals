@@ -24,6 +24,24 @@ const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
 struct UniformBufferContent {
     /// highest iteration value present in the current vertices
     max_iteration: u32,
+    /// smoothly changing value in range [0.0, 1.0)
+    dynamic_value: f32,
+}
+
+impl UniformBufferContent {
+    fn update_dynamic_value(&mut self) {
+        // of current system time, in range [0.0, 1.0)
+        let nanoseconds = {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap();
+            now.subsec_nanos() as f32 * 1e-9
+        };
+
+        // smoothly changing value in range [0.0, 1.0)
+        use std::f32::consts::PI;
+        self.dynamic_value = ((nanoseconds * 2. * PI).sin() + 1.) / 2.;
+    }
 }
 
 struct State {
@@ -110,7 +128,7 @@ impl State {
             label: Some("uniform buffer bind group layout"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -233,7 +251,7 @@ impl State {
             contents: indices,
         }));
 
-        self.update_uniform_buffer();
+        // uniform buffer will be updated later in the loop either way
 
         self.window.request_redraw();
     }
@@ -368,6 +386,9 @@ impl ApplicationHandler for App {
             },
 
             WindowEvent::RedrawRequested => {
+                state.uniform_buffer_content.update_dynamic_value();
+                state.update_uniform_buffer();
+
                 match state.render() {
                     Err(wgpu::SurfaceError::Timeout) =>
                         log::warn!("surface timeout (frame took too long to present)"),
@@ -389,8 +410,7 @@ impl ApplicationHandler for App {
                 }
 
                 // tell winit that we immediately want another frame after this one
-                // (commented out for now, as we are rendering a still image)
-                //state.window.request_redraw();
+                state.window.request_redraw();
             }
 
             WindowEvent::Resized(physical_size) => {
@@ -409,8 +429,8 @@ pub fn render() {
     let event_loop = EventLoop::new().unwrap();
 
     let control_flow = ControlFlow
-        ::Wait; // for rendering still images
-        //::Poll; // for rendering moving images
+        //::Wait; // for rendering still images
+        ::Poll; // for rendering moving images
 
     event_loop.set_control_flow(control_flow);
 
