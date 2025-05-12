@@ -1,6 +1,6 @@
 struct Globals {
     max_iteration: u32,
-    dynamic_value: f32,
+    animation_value: f32,
 };
 @group(0) @binding(0)
 var<uniform> globals: Globals;
@@ -34,5 +34,5 @@ fn vertex(in: VertexInput) -> VertexOutput {
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let x = in.scaled_iteration;
-    return vec4<f32>(globals.dynamic_value, x, 1.0 - x, 1.0);
+    return vec4<f32>(globals.animation_value, x, 1.0 - x, 1.0);
 }

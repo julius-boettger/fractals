@@ -17,9 +17,9 @@ use crate::curves::{Curve, CURVES, INITIAL_ITERATION};
 
 // store icon in executable so we can still distribute just a single file
 const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
-/// how many seconds a cycle of dynamic updates should take.
+/// how many seconds an animation cycle should take.
 /// must be < 60.
-const DYNAMIC_UPDATE_CYCLE_SECS: f32 = 5.;
+const SECS_PER_ANIMATION_CYCLE: f32 = 5.;
 
 #[repr(C)]
 #[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
@@ -28,11 +28,11 @@ struct UniformBufferContent {
     /// highest iteration value present in the current vertices
     max_iteration: u32,
     /// smoothly changing value in range [0.0, 1.0)
-    dynamic_value: f32,
+    animation_value: f32,
 }
 
 impl UniformBufferContent {
-    fn update_dynamic_value(&mut self) {
+    fn update_animation_value(&mut self) {
         let seconds = {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -46,13 +46,12 @@ impl UniformBufferContent {
             seconds as f32 + nanoseconds
         };
 
-        // make one cycle `DYNAMIC_UPDATE_CYCLE_SECS` long
         // in range [0.0, 1.0)
-        let normalized_time = (seconds % DYNAMIC_UPDATE_CYCLE_SECS) / DYNAMIC_UPDATE_CYCLE_SECS;
+        let normalized_time = (seconds % SECS_PER_ANIMATION_CYCLE) / SECS_PER_ANIMATION_CYCLE;
 
         // smoothly changing value in range [0.0, 1.0)
         use std::f32::consts::PI;
-        self.dynamic_value = ((normalized_time * 2. * PI).sin() + 1.) / 2.;
+        self.animation_value = ((normalized_time * 2. * PI).sin() + 1.) / 2.;
     }
 }
 
@@ -62,7 +61,7 @@ struct State {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    dynamic_update: bool,
+    animate: bool,
     curve_index: usize,
     curve: Box<dyn Curve>,
     iteration: usize,
@@ -79,7 +78,7 @@ struct State {
 
 impl State {
 
-    const INITIAL_DYNAMIC_UPDATE: bool = true;
+    const INITIAL_ANIMATE: bool = true;
 
     async fn new(window: Arc<Window>) -> Self {
         let size = window.inner_size();
@@ -126,7 +125,7 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        let dynamic_update = Self::INITIAL_DYNAMIC_UPDATE;
+        let animate = Self::INITIAL_ANIMATE;
         let curve_index = 0;
         let curve = CURVES[curve_index]();
         let iteration = INITIAL_ITERATION;
@@ -202,7 +201,7 @@ impl State {
             cache: None,
         });
 
-        let mut state = Self { surface, surface_configured, device, queue, config, dynamic_update, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        let mut state = Self { surface, surface_configured, device, queue, config, animate, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
         state.update_buffers();
         state
     }
@@ -218,7 +217,7 @@ impl State {
     }
 
     fn set_control_flow(&self, event_loop: &ActiveEventLoop) {
-        event_loop.set_control_flow(match self.dynamic_update {
+        event_loop.set_control_flow(match self.animate {
             true  => ControlFlow::Poll, // for rendering moving images
             false => ControlFlow::Wait, // for rendering still images
         });
@@ -276,7 +275,7 @@ impl State {
         }));
 
 
-        if self.dynamic_update {
+        if self.animate {
             // uniform buffer will be updated later in the loop either way
         } else {
             self.update_uniform_buffer();
@@ -420,12 +419,12 @@ impl ApplicationHandler for App {
             },
 
             key_pressed!(Space) => {
-                if state.dynamic_update {
-                    state.dynamic_update = false;
-                    state.uniform_buffer_content.dynamic_value = 0.;
+                if state.animate {
+                    state.animate = false;
+                    state.uniform_buffer_content.animation_value = 0.;
                     state.update_uniform_buffer();
                 } else {
-                    state.dynamic_update = true;
+                    state.animate = true;
                     // to jump-start constantly rendering new frames again
                     state.window.request_redraw();
                 }
@@ -434,8 +433,8 @@ impl ApplicationHandler for App {
             },
 
             WindowEvent::RedrawRequested => {
-                if state.dynamic_update {
-                    state.uniform_buffer_content.update_dynamic_value();
+                if state.animate {
+                    state.uniform_buffer_content.update_animation_value();
                     state.update_uniform_buffer();
                 }
 
@@ -459,7 +458,7 @@ impl ApplicationHandler for App {
                     Ok(_) => ()
                 }
 
-                if state.dynamic_update {
+                if state.animate {
                     // tell winit that we immediately want another frame after this one,
                     // as we are rendering a moving image
                     state.window.request_redraw();
