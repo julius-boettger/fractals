@@ -5,7 +5,7 @@ struct Globals {
 @group(0) @binding(0)
 var<uniform> globals: Globals;
 
-// matches render::Vertex struct in rust code
+// matches renderer::vertex::Vertex struct in rust code
 struct VertexInput {
     @location(0) position: vec2<f32>,
     @location(1) iteration: u32,
