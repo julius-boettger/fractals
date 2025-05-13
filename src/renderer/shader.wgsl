@@ -27,7 +27,7 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> vec3<f32> {
 }   
 fn hsl_to_rgb_helper(n: f32, a: f32, h: f32, s: f32, l: f32) -> f32 {
     let k = (n + (h * 12)) % 12;
-    return l - (a * max(min(min(k - 3, 9 - k), 1), -1));
+    return l - (a * clamp(min(k - 3, 9 - k), -1, 1));
 }
 
 // value in range [0, 1]
