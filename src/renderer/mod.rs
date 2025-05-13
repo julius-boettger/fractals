@@ -20,6 +20,7 @@ const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
 /// how many seconds an animation cycle should take.
 /// must be < 60.
 const SECS_PER_ANIMATION_CYCLE: f32 = 5.;
+/// value of state.animate at startup 
 const INITIAL_ANIMATE: bool = true;
 
 #[repr(C)]
@@ -28,30 +29,42 @@ const INITIAL_ANIMATE: bool = true;
 struct UniformBufferContent {
     /// highest iteration value present in the current vertices
     max_iteration: u32,
-    /// smoothly changing value in range [0.0, 1.0)
+    /// ever-changing value in range [0.0, 1.0) for color animation
     animation_value: f32,
 }
 
 struct State {
+    // wgpu things
     surface: wgpu::Surface<'static>,
-    surface_configured: bool,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    animate: bool,
-    animation_value_offset: f32,
-    curve_index: usize,
-    curve: Box<dyn Curve>,
-    iteration: usize,
-    size: PhysicalSize<u32>,
-    window: Arc<Window>,
-    num_indices: u32,
     uniform_buffer_content: UniformBufferContent, 
     vertex_buffer: Option<wgpu::Buffer>,
     index_buffer: Option<wgpu::Buffer>, 
     uniform_buffer: wgpu::Buffer, 
     uniform_buffer_bind_group: wgpu::BindGroup,
     render_pipeline: wgpu::RenderPipeline,
+    num_indices: u32,
+
+    // winit things
+    window: Arc<Window>,
+    size: PhysicalSize<u32>,
+
+    /// dont render when surface is not configured yet
+    surface_configured: bool,
+    /// whether to animate the colors of the curve, which means
+    /// constantly rendering new frames (instead of one static frame)
+    animate: bool,
+    /// offset for animation value in uniform buffer to guarantee smooth
+    /// starting/stopping of animation from where it last was
+    animation_value_offset: f32,
+    /// index of curve of curves::CURVES
+    curve_index: usize,
+    /// curve instance
+    curve: Box<dyn Curve>,
+    /// iteration of curve
+    iteration: usize,
 }
 
 impl State {
@@ -100,6 +113,7 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
+        // set some initial default values
         let animate = INITIAL_ANIMATE;
         let animation_value_offset = 0.;
         let curve_index = 0;
@@ -210,6 +224,8 @@ impl State {
             bytemuck::cast_slice(&[self.uniform_buffer_content]));
     }
 
+    /// `set_offset` should only be `true` once when the animation was
+    /// stopped for some time and should start again on the next frame
     fn update_animation_value(&mut self, set_offset: bool) {
         let seconds = {
             let now = std::time::SystemTime::now()
@@ -228,6 +244,8 @@ impl State {
         let normalized_time = (seconds % SECS_PER_ANIMATION_CYCLE) / SECS_PER_ANIMATION_CYCLE;
 
         if set_offset {
+            // guarantee smooth cycle of animation when starting/stopping by using a value that
+            // makes animation_value be similar when starting again compared to when it last stopped
             self.animation_value_offset = ((self.uniform_buffer_content.animation_value + 1.) - normalized_time) % 1.;
         } else {
             self.uniform_buffer_content.animation_value = (normalized_time + self.animation_value_offset) % 1.;
