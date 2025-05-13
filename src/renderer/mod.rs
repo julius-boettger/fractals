@@ -48,10 +48,7 @@ impl UniformBufferContent {
 
         // in range [0.0, 1.0)
         let normalized_time = (seconds % SECS_PER_ANIMATION_CYCLE) / SECS_PER_ANIMATION_CYCLE;
-
-        // smoothly changing value in range [0.0, 1.0)
-        use std::f32::consts::PI;
-        self.animation_value = ((normalized_time * 2. * PI).sin() + 1.) / 2.;
+        self.animation_value = normalized_time;
     }
 }
 
