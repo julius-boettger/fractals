@@ -16,6 +16,9 @@ struct VertexOutput {
     @location(1) color: vec3<f32>,
 };
 
+// from rusts f32::consts::PI
+const PI: f32 = 3.1415927410125732421875;
+
 // all input and output values in range [0, 1]
 fn hsl_to_rgb(h: f32, s: f32, l: f32) -> vec3<f32> {
     let a = s * min(l, 1 - l);
@@ -39,8 +42,6 @@ fn scale_to(value: f32, min: f32, max: f32) -> f32 {
 fn vertex(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
 
-    out.position = vec4(in.position, 0, 1);
-
     // in range [0, 1]
     var scaled_iteration = f32(in.iteration) / f32(globals.max_iteration);
     // overwrite value if there was division by 0
@@ -48,18 +49,32 @@ fn vertex(in: VertexInput) -> VertexOutput {
         scaled_iteration = 1;
     }
 
+    ////////// position //////////
+
+    let pos = in.position;
+    out.position = vec4(pos, 0, 1);
+
+    ////////// hue //////////
+
+    // in range [-PI, PI]
+    // 0 means pointing up (positive y)
+    let angle = atan2(pos.x, pos.y);
     // in range [0, 1]
-    var h = (in.position.y + 1) / 2;
+    let scaled_angle = (angle + PI) / (2 * PI);
     // color going upwards
-    h -= globals.animation_value;
+    var h = scaled_angle - globals.animation_value;
     // make sure it is still in range
     if h < 0 { h += 1; }
 
-    // limited saturation based on iteration
+    ////////// saturation //////////
+
     var s = scale_to(scaled_iteration, 0.8, 1);
 
-    // limited luminance based on iteration
+    ////////// luminance //////////
+
     let l = scale_to(scaled_iteration, 0.3, 0.55);
+
+    ////////// color //////////
 
     out.color = hsl_to_rgb(h, s, l);
 
