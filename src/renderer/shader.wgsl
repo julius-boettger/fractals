@@ -40,7 +40,7 @@ fn scale_to(value: f32, min: f32, max: f32) -> f32 {
 
 @vertex
 fn vertex(in: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
+    let pos = in.position;
 
     // in range [0, 1]
     var scaled_iteration = f32(in.iteration) / f32(globals.max_iteration);
@@ -49,32 +49,36 @@ fn vertex(in: VertexInput) -> VertexOutput {
         scaled_iteration = 1;
     }
 
-    ////////// position //////////
-
-    let pos = in.position;
-    out.position = vec4(pos, 0, 1);
-
-    ////////// hue //////////
-
-    // in range [-PI, PI]
-    // 0 means pointing up (positive y)
+    // in range [-PI, PI], 0 means pointing up (positive y)
     let angle = atan2(pos.x, pos.y);
     // in range [0, 1]
     let scaled_angle = (angle + PI) / (2 * PI);
-    // color going upwards
+
+    //let distance = sqrt(pow(pos.x, 2) + pow(pos.y, 2));
+    // in range [0, 1]
+    //let scaled_distance = distance / sqrt(2);
+
+    var out: VertexOutput;
+
+    ////////// position //////////
+
+    out.position = vec4(pos, 0, 1);
+
+    ////////// color //////////
+    // compute color here, as moving any of this logic
+    // to the fragment shader changes the visuals
+    // in an unwanted way because of interpolation
+
+    // hue rotating clockwise
     var h = scaled_angle - globals.animation_value;
     // make sure it is still in range
     if h < 0 { h += 1; }
 
-    ////////// saturation //////////
-
+    // saturation
     var s = scale_to(scaled_iteration, 0.8, 1);
 
-    ////////// luminance //////////
-
+    // luminance
     let l = scale_to(scaled_iteration, 0.3, 0.55);
-
-    ////////// color //////////
 
     out.color = hsl_to_rgb(h, s, l);
 
