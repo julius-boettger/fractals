@@ -31,27 +31,6 @@ struct UniformBufferContent {
     animation_value: f32,
 }
 
-impl UniformBufferContent {
-    fn update_animation_value(&mut self) {
-        let seconds = {
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap();
-    
-            // in seconds, in range [0.0, 1.0)
-            let nanoseconds = now.subsec_nanos() as f32 * 1e-9;
-            // in range [0, 60)
-            let seconds = now.as_secs() % 60;
-
-            seconds as f32 + nanoseconds
-        };
-
-        // in range [0.0, 1.0)
-        let normalized_time = (seconds % SECS_PER_ANIMATION_CYCLE) / SECS_PER_ANIMATION_CYCLE;
-        self.animation_value = normalized_time;
-    }
-}
-
 struct State {
     surface: wgpu::Surface<'static>,
     surface_configured: bool,
@@ -59,6 +38,7 @@ struct State {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     animate: bool,
+    animation_value_offset: f32,
     curve_index: usize,
     curve: Box<dyn Curve>,
     iteration: usize,
@@ -123,6 +103,7 @@ impl State {
         };
 
         let animate = Self::INITIAL_ANIMATE;
+        let animation_value_offset = 0.;
         let curve_index = 0;
         let curve = CURVES[curve_index]();
         let iteration = INITIAL_ITERATION;
@@ -198,7 +179,7 @@ impl State {
             cache: None,
         });
 
-        let mut state = Self { surface, surface_configured, device, queue, config, animate, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        let mut state = Self { surface, surface_configured, device, queue, config, animate, animation_value_offset, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
         state.update_buffers();
         state
     }
@@ -229,6 +210,30 @@ impl State {
     fn update_uniform_buffer(&mut self) {
         self.queue.write_buffer(&self.uniform_buffer, 0,
             bytemuck::cast_slice(&[self.uniform_buffer_content]));
+    }
+
+    fn update_animation_value(&mut self, set_offset: bool) {
+        let seconds = {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap();
+    
+            // in seconds, in range [0.0, 1.0)
+            let nanoseconds = now.subsec_nanos() as f32 * 1e-9;
+            // in range [0, 60)
+            let seconds = now.as_secs() % 60;
+
+            seconds as f32 + nanoseconds
+        };
+
+        // in range [0.0, 1.0)
+        let normalized_time = (seconds % SECS_PER_ANIMATION_CYCLE) / SECS_PER_ANIMATION_CYCLE;
+
+        if set_offset {
+            self.animation_value_offset = ((self.uniform_buffer_content.animation_value + 1.) - normalized_time) % 1.;
+        } else {
+            self.uniform_buffer_content.animation_value = (normalized_time + self.animation_value_offset) % 1.;
+        }
     }
 
     fn update_buffers(&mut self) {
@@ -418,10 +423,9 @@ impl ApplicationHandler for App {
             key_pressed!(Space) => {
                 if state.animate {
                     state.animate = false;
-                    state.uniform_buffer_content.animation_value = 0.;
-                    state.update_uniform_buffer();
                 } else {
                     state.animate = true;
+                    state.update_animation_value(true);
                     // to jump-start constantly rendering new frames again
                     state.window.request_redraw();
                 }
@@ -431,7 +435,7 @@ impl ApplicationHandler for App {
 
             WindowEvent::RedrawRequested => {
                 if state.animate {
-                    state.uniform_buffer_content.update_animation_value();
+                    state.update_animation_value(false);
                     state.update_uniform_buffer();
                 }
 
