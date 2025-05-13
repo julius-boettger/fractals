@@ -69,16 +69,22 @@ fn vertex(in: VertexInput) -> VertexOutput {
     // to the fragment shader changes the visuals
     // in an unwanted way because of interpolation
 
-    // hue rotating clockwise
-    var h = scaled_angle - globals.animation_value;
-    // make sure it is still in range
-    if h < 0 { h += 1; }
+    // based on angle
+    var h = scaled_angle;
+    // rotating clockwise (except on lowest iteration)
+    if scaled_iteration != 0 {
+        h += -globals.animation_value + 1;
+    }
+    // offset for iteration
+    h += -scaled_iteration * 0.3 + 0.3;
+    // ensure range [0, 1]
+    h %= 1;
 
     // saturation
     var s = scale_to(scaled_iteration, 0.8, 1);
 
     // luminance
-    let l = scale_to(scaled_iteration, 0.3, 0.55);
+    let l = scale_to(scaled_iteration, 0.2, 0.55);
 
     out.color = hsl_to_rgb(h, s, l);
 
