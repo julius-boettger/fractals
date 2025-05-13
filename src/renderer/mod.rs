@@ -20,6 +20,7 @@ const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
 /// how many seconds an animation cycle should take.
 /// must be < 60.
 const SECS_PER_ANIMATION_CYCLE: f32 = 5.;
+const INITIAL_ANIMATE: bool = true;
 
 #[repr(C)]
 #[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
@@ -54,9 +55,6 @@ struct State {
 }
 
 impl State {
-
-    const INITIAL_ANIMATE: bool = true;
-
     async fn new(window: Arc<Window>) -> Self {
         let size = window.inner_size();
 
@@ -102,7 +100,7 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        let animate = Self::INITIAL_ANIMATE;
+        let animate = INITIAL_ANIMATE;
         let animation_value_offset = 0.;
         let curve_index = 0;
         let curve = CURVES[curve_index]();
