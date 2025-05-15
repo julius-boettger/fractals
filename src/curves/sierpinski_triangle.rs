@@ -20,6 +20,7 @@ impl Curve for SierpinskiTriangle {
     }
 
     fn vertex_format(&self) -> VertexFormat { VertexFormat::Triangles }
+    fn default_iteration(&self) -> usize { 5 }
     
     fn     data(&    self) -> &    Vec<Vec<Vertex>> { &    self.data }
     fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>> { &mut self.data }

@@ -4,8 +4,6 @@ pub mod sierpinski_triangle;
 
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
-pub const INITIAL_ITERATION: usize = 4;
-
 /// slice of functions to get new curve of each implementing struct.
 /// first element will be the initial curve rendered.
 pub const CURVES: &[fn() -> Box<dyn Curve>] = &[
@@ -19,8 +17,9 @@ pub trait Curve {
     fn new() -> Self
         where Self: Sized; // for dyn-compatability
 
-    // technically doesnt need to be a method, but is easier to work with
+    // technically dont need to be methods, but are easier to work with
     fn vertex_format(&self) -> VertexFormat;
+    fn default_iteration(&self) -> usize;
 
     fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex>;
 

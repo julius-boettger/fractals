@@ -13,7 +13,7 @@ use winit::{
 };
 
 use vertex::{Vertex, VertexFormat};
-use crate::curves::{Curve, CURVES, INITIAL_ITERATION};
+use crate::curves::{Curve, CURVES};
 
 // store icon in executable so we can still distribute just a single file
 const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
@@ -118,7 +118,7 @@ impl State {
         let animation_value_offset = 0.;
         let curve_index = 0;
         let curve = CURVES[curve_index]();
-        let iteration = INITIAL_ITERATION;
+        let iteration = curve.default_iteration();
         let num_indices = Default::default();
         let uniform_buffer_content = Default::default();
         let vertex_buffer = None;
@@ -215,7 +215,7 @@ impl State {
 
     fn initialize_curve(&mut self) {
         self.curve = CURVES[self.curve_index]();
-        self.iteration = INITIAL_ITERATION;
+        self.iteration = self.curve.default_iteration();
         self.update_buffers();
     }
 
