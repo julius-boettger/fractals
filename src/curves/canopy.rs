@@ -6,21 +6,50 @@ use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
 /// https://en.wikipedia.org/wiki/Fractal_canopy
 pub struct Canopy {
-    data: Vec<Vec<Vertex>>
+    data: Vec<Vec<Vertex>>,
+    /// factor of PI
+    left_angle: f32,
+    /// factor of PI
+    right_angle: f32,
 }
 
 impl Canopy {
     // adjust shape
-    const BRANCH_LENGTH_FACTOR: f32 = 0.675;
-    /// in radians
-    const LEFT_BRANCH_ANGLE: f32 = PI * 0.2;
-    /// in radians
-    const RIGHT_BRANCH_ANGLE: f32 = PI * 0.35;
+    const LENGTH_FACTOR: f32 = 0.675;
+    /// factor of PI
+    const INITIAL_LEFT_ANGLE: f32 = 0.2;
+    /// factor of PI
+    const INITIAL_RIGHT_ANGLE: f32 = 0.35;
+    /// when adjusting angle
+    const ANGLE_INCREMENT: f32 = 0.05;
+    const ANGLE_MIN: f32 = Self::ANGLE_INCREMENT;
+    const ANGLE_MAX: f32 = 0.5;
+}
+
+impl Canopy {
+    pub fn increment_left_angle(&mut self) {
+        self.left_angle = (self.left_angle + Self::ANGLE_INCREMENT)
+            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+    }
+    pub fn decrement_left_angle(&mut self) {
+        self.left_angle = (self.left_angle - Self::ANGLE_INCREMENT)
+            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+    }
+    pub fn increment_right_angle(&mut self) {
+        self.right_angle = (self.right_angle + Self::ANGLE_INCREMENT)
+            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+    }
+    pub fn decrement_right_angle(&mut self) {
+        self.right_angle = (self.right_angle - Self::ANGLE_INCREMENT)
+            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+    }
 }
 
 impl Curve for Canopy {
     fn new() -> Self {
         Self {
+            left_angle: Self::INITIAL_LEFT_ANGLE,
+            right_angle: Self::INITIAL_RIGHT_ANGLE,
             // always pointing counterclockwise to make rotation work later
             // in this case: always point top to bottom
             data: vec![vec![
@@ -47,8 +76,8 @@ impl Curve for Canopy {
 
                 let bottom_to_top = top - bottom;
 
-                let top_left = top + (bottom_to_top.rotate_ccw(Self::LEFT_BRANCH_ANGLE) * Self::BRANCH_LENGTH_FACTOR);
-                let top_right = top + (bottom_to_top.rotate_cw(Self::RIGHT_BRANCH_ANGLE) * Self::BRANCH_LENGTH_FACTOR);
+                let top_left = top + (bottom_to_top.rotate_ccw(PI * self.left_angle) * Self::LENGTH_FACTOR);
+                let top_right = top + (bottom_to_top.rotate_cw(PI * self.right_angle) * Self::LENGTH_FACTOR);
 
                 [
                     Vertex::new(top_left, iteration),

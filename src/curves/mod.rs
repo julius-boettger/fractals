@@ -41,7 +41,7 @@ impl Curves {
 }
 
 /// https://en.wikipedia.org/wiki/Fractal_curve
-pub trait Curve {
+pub trait Curve: std::any::Any {
     fn new() -> Self
         where Self: Sized; // for dyn-compatability
 
@@ -54,6 +54,13 @@ pub trait Curve {
     /// one element for each iteration
     fn     data(&    self) -> &    Vec<Vec<Vertex>>;
     fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>>;
+
+    /// cast to current type of curve
+    fn downcast(curve: &mut Box<dyn Curve>) -> &mut Self
+        where Self: Sized // for dyn-compatability
+    {
+        (&mut **curve as &mut dyn std::any::Any).downcast_mut::<Self>().unwrap()
+    }
 
     /// iteration 0 meaning initial state
     fn vertices(&mut self, iteration: usize) -> &Vec<Vertex> {

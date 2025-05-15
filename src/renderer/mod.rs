@@ -13,7 +13,7 @@ use winit::{
 };
 
 use vertex::{Vertex, VertexFormat};
-use crate::curves::{Curve, Curves};
+use crate::curves::{*, canopy::*};
 
 // store icon in executable so we can still distribute just a single file
 const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
@@ -217,6 +217,12 @@ impl State {
         self.update_buffers();
     }
 
+    /// remove data of curve instance except for starting iteration
+    fn redo_curve(&mut self) {
+        *self.curve_instance.mut_data() = vec![self.curve_instance.data()[0].clone()];
+        self.update_buffers();
+    }
+
     fn update_uniform_buffer(&mut self) {
         self.queue.write_buffer(&self.uniform_buffer, 0,
             bytemuck::cast_slice(&[self.uniform_buffer_content]));
@@ -408,7 +414,6 @@ impl ApplicationHandler for App {
                 state.iteration += 1;
                 state.update_buffers();
             },
-
             key_pressed!(ArrowDown) => {
                 if state.iteration > 0 {
                     state.iteration -= 1;
@@ -420,10 +425,30 @@ impl ApplicationHandler for App {
                 state.curve.prev();
                 state.initialize_curve();
             },
-
             key_pressed!(ArrowRight) => {
                 state.curve.next();
                 state.initialize_curve();
+            },
+
+            key_pressed!(KeyF) => {
+                if state.curve != Curves::Canopy { return; }
+                Canopy::downcast(&mut state.curve_instance).decrement_left_angle();
+                state.redo_curve();
+            },
+            key_pressed!(KeyD) => {
+                if state.curve != Curves::Canopy { return; }
+                Canopy::downcast(&mut state.curve_instance).increment_left_angle();
+                state.redo_curve();
+            },
+            key_pressed!(KeyJ) => {
+                if state.curve != Curves::Canopy { return; }
+                Canopy::downcast(&mut state.curve_instance).decrement_right_angle();
+                state.redo_curve();
+            },
+            key_pressed!(KeyK) => {
+                if state.curve != Curves::Canopy { return; }
+                Canopy::downcast(&mut state.curve_instance).increment_right_angle();
+                state.redo_curve();
             },
 
             key_pressed!(Space) => {
