@@ -2,15 +2,43 @@ pub mod canopy;
 pub mod koch_snowflake;
 pub mod sierpinski_triangle;
 
+use strum::IntoEnumIterator;
+
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
-/// slice of functions to get new curve of each implementing struct.
-/// first element will be the initial curve rendered.
-pub const CURVES: &[fn() -> Box<dyn Curve>] = &[
-    || Box::new(canopy::Canopy::new()),
-    || Box::new(koch_snowflake::KochSnowflake::new()),
-    || Box::new(sierpinski_triangle::SierpinskiTriangle::new()),
-];
+#[derive(Default, PartialEq, strum::EnumIter)]
+pub enum Curves {
+    #[default] // first rendered on program start
+    Canopy,
+    KochSnowflake,
+    SierpinskiTriangle,
+}
+impl Curves {
+    pub fn new_instance(&self) -> Box<dyn Curve> {
+        match self {
+            Self::Canopy => Box::new(canopy::Canopy::new()),
+            Self::KochSnowflake => Box::new(koch_snowflake::KochSnowflake::new()),
+            Self::SierpinskiTriangle => Box::new(sierpinski_triangle::SierpinskiTriangle::new()),
+        }
+    }
+
+    pub fn next(&mut self) {
+        let mut cycle = Self::iter().cycle();
+        while cycle.next().unwrap() != *self {}
+        *self = cycle.next().unwrap()
+    }
+
+    pub fn prev(&mut self) {
+        let mut cycle = Self::iter().cycle();
+        let mut next1 = cycle.next().unwrap();
+        let mut next2 = cycle.next().unwrap();
+        while next2 != *self {
+            next1 = next2;
+            next2 = cycle.next().unwrap();
+        }
+        *self = next1
+    }
+}
 
 /// https://en.wikipedia.org/wiki/Fractal_curve
 pub trait Curve {

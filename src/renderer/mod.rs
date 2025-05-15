@@ -13,7 +13,7 @@ use winit::{
 };
 
 use vertex::{Vertex, VertexFormat};
-use crate::curves::{Curve, CURVES};
+use crate::curves::{Curve, Curves};
 
 // store icon in executable so we can still distribute just a single file
 const ICON_32_BYTES: &[u8] = include_bytes!("../../res/icon/32x32.png");
@@ -51,6 +51,8 @@ struct State {
     window: Arc<Window>,
     size: PhysicalSize<u32>,
 
+    curve: Curves,
+    curve_instance: Box<dyn Curve>,
     /// dont render when surface is not configured yet
     surface_configured: bool,
     /// whether to animate the colors of the curve, which means
@@ -59,10 +61,6 @@ struct State {
     /// offset for animation value in uniform buffer to guarantee smooth
     /// starting/stopping of animation from where it last was
     animation_value_offset: f32,
-    /// index of curve of curves::CURVES
-    curve_index: usize,
-    /// curve instance
-    curve: Box<dyn Curve>,
     /// iteration of curve
     iteration: usize,
 }
@@ -114,11 +112,11 @@ impl State {
         };
 
         // set some initial default values
+        let curve = Curves::default();
+        let curve_instance = curve.new_instance();
         let animate = INITIAL_ANIMATE;
         let animation_value_offset = 0.;
-        let curve_index = 0;
-        let curve = CURVES[curve_index]();
-        let iteration = curve.default_iteration();
+        let iteration = curve_instance.default_iteration();
         let num_indices = Default::default();
         let uniform_buffer_content = Default::default();
         let vertex_buffer = None;
@@ -191,7 +189,7 @@ impl State {
             cache: None,
         });
 
-        let mut state = Self { surface, surface_configured, device, queue, config, animate, animation_value_offset, curve_index, curve, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        let mut state = Self { surface, surface_configured, device, queue, config, curve, curve_instance, animate, animation_value_offset, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
         state.update_buffers();
         state
     }
@@ -214,8 +212,8 @@ impl State {
     }
 
     fn initialize_curve(&mut self) {
-        self.curve = CURVES[self.curve_index]();
-        self.iteration = self.curve.default_iteration();
+        self.curve_instance = self.curve.new_instance();
+        self.iteration = self.curve_instance.default_iteration();
         self.update_buffers();
     }
 
@@ -253,8 +251,8 @@ impl State {
     }
 
     fn update_buffers(&mut self) {
-        let vertex_format = self.curve.vertex_format();
-        let vertices = self.curve.vertices(self.iteration);
+        let vertex_format = self.curve_instance.vertex_format();
+        let vertices = self.curve_instance.vertices(self.iteration);
 
         let vertices = match vertex_format {
             VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
@@ -419,20 +417,12 @@ impl ApplicationHandler for App {
             },
 
             key_pressed!(ArrowLeft) => {
-                state.curve_index = if state.curve_index == 0 {
-                    CURVES.len() - 1
-                } else {
-                    state.curve_index - 1
-                };
+                state.curve.prev();
                 state.initialize_curve();
             },
 
             key_pressed!(ArrowRight) => {
-                state.curve_index = if state.curve_index == CURVES.len() - 1 {
-                    0   
-                } else {
-                    state.curve_index + 1
-                };
+                state.curve.next();
                 state.initialize_curve();
             },
 
