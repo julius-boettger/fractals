@@ -46,10 +46,8 @@ impl Curve for Canopy {
 
                 let bottom_to_top = top - bottom;
 
-                let top_left = (top + bottom_to_top.rotate_ccw(Self::LEFT_BRANCH_ANGLE))
-                    * Self::BRANCH_LENGTH_FACTOR;
-                let top_right = (top + bottom_to_top.rotate_cw(Self::RIGHT_BRANCH_ANGLE))
-                    * Self::BRANCH_LENGTH_FACTOR;
+                let top_left = top + (bottom_to_top.rotate_ccw(Self::LEFT_BRANCH_ANGLE) * Self::BRANCH_LENGTH_FACTOR);
+                let top_right = top + (bottom_to_top.rotate_cw(Self::RIGHT_BRANCH_ANGLE) * Self::BRANCH_LENGTH_FACTOR);
 
                 [
                     Vertex::new(top_left, iteration),
