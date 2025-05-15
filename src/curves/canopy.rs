@@ -11,11 +11,11 @@ pub struct Canopy {
 
 impl Canopy {
     // adjust shape
-    const BRANCH_LENGTH_FACTOR: f32 = 0.75;
+    const BRANCH_LENGTH_FACTOR: f32 = 0.675;
     /// in radians
-    const LEFT_BRANCH_ANGLE: f32 = (2. * PI) / 11.;
+    const LEFT_BRANCH_ANGLE: f32 = PI * 0.2;
     /// in radians
-    const RIGHT_BRANCH_ANGLE: f32 = Self::LEFT_BRANCH_ANGLE;
+    const RIGHT_BRANCH_ANGLE: f32 = PI * 0.35;
 }
 
 impl Curve for Canopy {
