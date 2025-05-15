@@ -1,3 +1,4 @@
+pub mod canopy;
 pub mod koch_snowflake;
 pub mod sierpinski_triangle;
 
@@ -8,6 +9,7 @@ pub const INITIAL_ITERATION: usize = 4;
 /// slice of functions to get new curve of each implementing struct.
 /// first element will be the initial curve rendered.
 pub const CURVES: &[fn() -> Box<dyn Curve>] = &[
+    || Box::new(canopy::Canopy::new()),
     || Box::new(koch_snowflake::KochSnowflake::new()),
     || Box::new(sierpinski_triangle::SierpinskiTriangle::new()),
 ];

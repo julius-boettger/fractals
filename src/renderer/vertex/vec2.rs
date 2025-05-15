@@ -42,6 +42,22 @@ impl Vec2 {
     pub const fn clockwise_orthogonal(&self) -> Self {
         Vec2::new(self.y, -self.x)
     }
+
+    /// clockwise, angle in radians
+    pub fn rotate_cw(&self, angle: f32) -> Self {
+        Vec2::new(
+             self.x * angle.cos() + self.y * angle.sin(),
+            -self.x * angle.sin() + self.y * angle.cos(),
+        )
+    }
+
+    /// counterclockwise, angle in radians
+    pub fn rotate_ccw(&self, angle: f32) -> Self {
+        Vec2::new(
+            self.x * angle.cos() - self.y * angle.sin(),
+            self.x * angle.sin() + self.y * angle.cos(),
+        )
+    }
 }
 
 impl ops::Add for Vec2 {
