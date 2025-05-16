@@ -27,25 +27,31 @@ impl Canopy {
 }
 
 impl Canopy {
-    pub fn increment_left_angle(&mut self) {
-        self.left_angle = (self.left_angle + Self::ANGLE_INCREMENT)
-            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
-        log::info!("set left angle to {:.2}π", self.left_angle)
-    }
-    pub fn decrement_left_angle(&mut self) {
-        self.left_angle = (self.left_angle - Self::ANGLE_INCREMENT)
-            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
-        log::info!("set left angle to {:.2}π", self.left_angle)
-    }
-    pub fn increment_right_angle(&mut self) {
-        self.right_angle = (self.right_angle + Self::ANGLE_INCREMENT)
-            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
-        log::info!("set right angle to {:.2}π", self.right_angle)
-    }
-    pub fn decrement_right_angle(&mut self) {
-        self.right_angle = (self.right_angle - Self::ANGLE_INCREMENT)
-            .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
-        log::info!("set right angle to {:.2}π", self.right_angle)
+    /// returns `true` if value was actually changed <br>
+    /// `!increment == decrement` <br>
+    /// `!left == right`
+    pub fn change_angle(&mut self, increment: bool, left: bool) -> bool {
+        let angle = match left {
+            true => &mut self.left_angle,
+            false => &mut self.right_angle,
+        };
+
+        *angle += match increment {
+            true => Self::ANGLE_INCREMENT,
+            false => -Self::ANGLE_INCREMENT,
+        };
+
+        let clamped_angle = angle.clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+        // changed in range
+        let changed = *angle == clamped_angle;
+
+        match changed {
+            true => log::info!("set {} angle to {:.2}π", if left { "left" } else { "right" }, angle),
+            // ensure range
+            false => *angle = clamped_angle,
+        }
+
+        changed
     }
 }
 
