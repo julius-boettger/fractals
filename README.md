@@ -8,27 +8,40 @@
   5th iteration of <a href="https://en.wikipedia.org/wiki/Koch_snowflake">Koch snowflake</a> (left) and <a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle">Sierpinski triangle</a> (right)
 </p>
 
-## Controls
+### Controls
 
 - `SPACE`: Start/stop animation
 - `←`/`→`: Cycle through different fractals
 - `↑`/`↓`: Increase/decrease fractal iteration
   - ⚠️ Careful: Memory usage increases exponentially with every iteration increase. When you eventually run out of memory, your operating system will (hopefully) attempt to prevent itself from crashing by killing this process.
 
-## Installation
+# Installation
 
-### Download and run the [latest release](https://github.com/julius-boettger/fractals/releases/latest) (if available for your platform).
+## Download and run a prebuilt binary...
 
-You can also quickly try it out on Linux using [Nix Flakes](https://wiki.nixos.org/wiki/Flakes) (probably only works on Wayland):
+...from the [latest release](https://github.com/julius-boettger/fractals/releases/latest) (if available for your platform)
+
+## Build and run from source
+
+### Using [Nix Flakes](https://wiki.nixos.org/wiki/Flakes)
+> probably only works with Linux and Wayland
 ```sh
+# option 1: fully automatic
 nix run github:julius-boettger/fractals
-```
-
-### Or compile it yourself with [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
-```sh
+# option 2: fetch source, build, run
 git clone https://github.com/julius-boettger/fractals
 cd fractals
-cargo build --release
+nix build
+./result/bin/fractals
 ```
 
-Now you should have a `fractals` (or `fractals.exe`) executable binary in `target/release/` that you can run.
+### Using [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+```sh
+# fetch the source
+git clone https://github.com/julius-boettger/fractals
+cd fractals
+# build
+cargo build --release
+# run
+./target/release/fractals[.exe]
+```
