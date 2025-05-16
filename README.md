@@ -1,12 +1,23 @@
 # Fractals
 ### Rendered using [wgpu](https://wgpu.rs/) (Rust implementation of the [WebGPU](https://www.w3.org/TR/webgpu/) API)
 
-<p align="middle">
-  <img src=".github/assets/koch_snowflake.png" width="49%"/> 
-  <img src=".github/assets/sierpinski_triangle.png" width="49%"/> 
-  <br>
-  5th iteration of <a href="https://en.wikipedia.org/wiki/Koch_snowflake">Koch snowflake</a> (left) and <a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle">Sierpinski triangle</a> (right)
-</p>
+<table>
+  <tr>
+    <td><img src=".github/assets/koch_snowflake.png"/></th>
+    <td><img src=".github/assets/sierpinski_triangle.png"/></th>
+    <td><img src=".github/assets/canopy.png"/></th>
+  </tr>
+  <tr>
+    <td><a href="https://en.wikipedia.org/wiki/Koch_snowflake">Koch snowflake</a></td>
+    <td><a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle">Sierpinski triangle</a></td>
+    <td><a href="https://en.wikipedia.org/wiki/Fractal_canopy">Canopy</a></td>
+  </tr>
+  <tr>
+    <td>5th iteration</td>
+    <td>5th iteration</td>
+    <td>10th iteration, 0.2π left angle, 0.35π right angle</td>
+  </tr>
+</table>
 
 ### Controls
 
@@ -14,6 +25,9 @@
 - `←`/`→`: Cycle through different fractals
 - `↑`/`↓`: Increase/decrease fractal iteration
   - ⚠️ Careful: Memory usage increases exponentially with every iteration increase. When you eventually run out of memory, your operating system will (hopefully) attempt to prevent itself from crashing by killing this process.
+- Only when viewing [Canopy](https://en.wikipedia.org/wiki/Fractal_canopy):
+  - `F`/`D`: Increase/decrease left angle
+  - `J`/`K`: Increase/decrease right angle
 
 # Installation
 
