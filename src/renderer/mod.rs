@@ -432,22 +432,22 @@ impl ApplicationHandler for App {
 
             key_pressed!(KeyF) => {
                 if state.curve != Curves::Canopy { return; }
-                Canopy::downcast(&mut state.curve_instance).decrement_left_angle();
+                Canopy::downcast(&mut state.curve_instance).increment_left_angle();
                 state.redo_curve();
             },
             key_pressed!(KeyD) => {
                 if state.curve != Curves::Canopy { return; }
-                Canopy::downcast(&mut state.curve_instance).increment_left_angle();
+                Canopy::downcast(&mut state.curve_instance).decrement_left_angle();
                 state.redo_curve();
             },
             key_pressed!(KeyJ) => {
                 if state.curve != Curves::Canopy { return; }
-                Canopy::downcast(&mut state.curve_instance).decrement_right_angle();
+                Canopy::downcast(&mut state.curve_instance).increment_right_angle();
                 state.redo_curve();
             },
             key_pressed!(KeyK) => {
                 if state.curve != Curves::Canopy { return; }
-                Canopy::downcast(&mut state.curve_instance).increment_right_angle();
+                Canopy::downcast(&mut state.curve_instance).decrement_right_angle();
                 state.redo_curve();
             },
 
