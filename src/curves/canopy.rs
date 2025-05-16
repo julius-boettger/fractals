@@ -30,18 +30,22 @@ impl Canopy {
     pub fn increment_left_angle(&mut self) {
         self.left_angle = (self.left_angle + Self::ANGLE_INCREMENT)
             .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+        log::info!("set left angle to {:.2}π", self.left_angle)
     }
     pub fn decrement_left_angle(&mut self) {
         self.left_angle = (self.left_angle - Self::ANGLE_INCREMENT)
             .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+        log::info!("set left angle to {:.2}π", self.left_angle)
     }
     pub fn increment_right_angle(&mut self) {
         self.right_angle = (self.right_angle + Self::ANGLE_INCREMENT)
             .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+        log::info!("set right angle to {:.2}π", self.right_angle)
     }
     pub fn decrement_right_angle(&mut self) {
         self.right_angle = (self.right_angle - Self::ANGLE_INCREMENT)
             .clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
+        log::info!("set right angle to {:.2}π", self.right_angle)
     }
 }
 
