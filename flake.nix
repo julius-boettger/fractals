@@ -30,12 +30,10 @@
         src = ./.;
         cargoLock.lockFile = ./Cargo.lock;
 
-        buildInputs = runtimeDeps pkgs;
-
         # make sure runtime dependencies get picked up
         # inspired by https://github.com/NixOS/nixpkgs/blob/52faf482a3889b7619003c0daec593a1912fddc1/pkgs/by-name/al/alacritty/package.nix
         dontPatchELF = true;
-        postInstall = ''patchelf --add-rpath "${pkgs.lib.makeLibraryPath buildInputs}" $out/bin/${name}'';
+        postInstall = ''patchelf --add-rpath "${pkgs.lib.makeLibraryPath (runtimeDeps pkgs)}" $out/bin/${name}'';
       };
     });
 
