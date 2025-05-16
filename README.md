@@ -3,19 +3,19 @@
 
 <table>
   <tr>
-    <td><img src=".github/assets/koch_snowflake.png"/></th>
-    <td><img src=".github/assets/sierpinski_triangle.png"/></th>
     <td><img src=".github/assets/canopy.png"/></th>
+    <td><img src=".github/assets/sierpinski_triangle.png"/></th>
+    <td><img src=".github/assets/koch_snowflake.png"/></th>
   </tr>
   <tr>
-    <td><a href="https://en.wikipedia.org/wiki/Koch_snowflake">Koch snowflake</a></td>
-    <td><a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle">Sierpinski triangle</a></td>
     <td><a href="https://en.wikipedia.org/wiki/Fractal_canopy">Canopy</a></td>
+    <td><a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle">Sierpinski triangle</a></td>
+    <td><a href="https://en.wikipedia.org/wiki/Koch_snowflake">Koch snowflake</a></td>
   </tr>
   <tr>
-    <td>5th iteration</td>
-    <td>5th iteration</td>
-    <td>10th iteration, 0.2π left angle, 0.35π right angle</td>
+    <td>13th iteration, 0.2π left angle, 0.35π right angle</td>
+    <td>7th iteration</td>
+    <td>6th iteration</td>
   </tr>
 </table>
 
