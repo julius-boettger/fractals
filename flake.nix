@@ -42,6 +42,10 @@
         # make sure runtime dependencies get picked up
         # buildInputs doesnt work, see https://github.com/rust-windowing/winit/issues/3244
         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (runtimeDeps pkgs);
+        # enable logging
+        RUST_LOG = "error,fractals=trace";
+        # display backtrace
+        RUST_BACKTRACE = 1;
 
         nativeBuildInputs = with pkgs; [
           (rust-bin.stable.latest.default.override {
@@ -60,12 +64,9 @@
             nix develop .#cross-windows -c cargo build --target x86_64-pc-windows-gnu "$@"
           '')
 
-          # convenient command to build release binaries for x86_64 linux and windows
+          # convenient command to build supported release binaries
           (pkgs.writeShellScriptBin "release" ''
-            rm -rf fractals-linux-x86_64
             rm -rf fractals-windows-x86_64.exe
-            cargo build --release --target x86_64-unknown-linux-gnu || exit 1
-            cp target/x86_64-unknown-linux-gnu/release/fractals fractals-linux-x86_64
             build-windows --release || exit 1
             cp target/x86_64-pc-windows-gnu/release/fractals.exe fractals-windows-x86_64.exe
           '')
@@ -74,11 +75,6 @@
           cargo-flamegraph # provides `cargo flamegraph` for profiling
                            # best used with CARGO_PROFILE_RELEASE_DEBUG=true
         ];
-
-        # enable logging
-        RUST_LOG = "error,fractals=trace";
-        # display backtrace
-        RUST_BACKTRACE = 1;
       };
 
       # for cross-compiling to windows using mingw compiler with wine
