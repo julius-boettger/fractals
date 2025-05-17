@@ -6,6 +6,7 @@ use wgpu::util::DeviceExt;
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
+    error::EventLoopError,
     event::{ElementState, KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::{KeyCode, PhysicalKey},
@@ -76,11 +77,21 @@ impl State {
         });
 
         // to display rendered images
-        let surface = instance.create_surface(window.clone()).unwrap();
+        let surface = match instance.create_surface(window.clone()) {
+            Ok(surface) => surface,
+            Err(e) => {
+                #[cfg(target_os = "linux")]
+                if format!("{e:?}").contains("FailedToCreateSurfaceForAnyBackend") {
+                    log::error!("vulkan library (libvulkan.so) not found.\nthis may be caused by your graphics driver stack not being set up correctly.");
+                    std::process::exit(1)
+                }
+
+                panic!("{e:?}");
+            },
+        };
 
         // will be set to true on first resize
         let surface_configured = false;
-
 
         // handle to chosen gpu
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -514,7 +525,31 @@ impl ApplicationHandler for App {
 }
 
 pub fn render() {
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = match EventLoop::new() {
+        Ok(event_loop) => event_loop,
+
+        #[cfg(target_os = "linux")]
+        Err(EventLoopError::Os(e)) => {
+            // cant use pattern matching because error types are private,
+            // best we can do is match the formatted error string
+            let error_string = format!("{e:?}");
+
+            if error_string.contains("WaylandError(Connection(NoWaylandLib))") {
+                log::error!("wayland libraries (libwayland-client.so/-cursor.so/-egl.so) not found, consider installing them.");
+                std::process::exit(1)
+            }
+
+            if error_string.contains("WaylandError(Connection(NoCompositor))") {
+                log::error!("no running wayland compositor found.\nthis may be caused by an unusual setup which winit (https://docs.rs/winit) does not understand.");
+                std::process::exit(1)
+            }
+
+            panic!("{:?}", e);
+        },
+
+        Err(e) => panic!("{:?}", e)
+    };
+
     let mut app = App::default();
     event_loop.run_app(&mut app).unwrap();
 }
