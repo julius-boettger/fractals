@@ -47,7 +47,26 @@
         # display backtrace
         RUST_BACKTRACE = 1;
 
+        # dont pollute $HOME
+        CARGO_HOME = ".cargo";
+        RUSTUP_HOME = ".rustup";
+
+        shellHook = ''
+          rustup toolchain add stable
+          export PATH=".rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH"
+          export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
+          dockerd-rootless &
+        '';
+
+        # attempt: cross build --target x86_64-unknown-linux-musl
+        # see https://github.com/cross-rs/cross/issues/1383
+
         nativeBuildInputs = with pkgs; [
+          docker
+          rootlesskit
+          rustup
+          cargo-cross
+
           (rust-bin.stable.latest.default.override {
             # fix rust-analyzer in vscode
             extensions = [ "rust-src" ];

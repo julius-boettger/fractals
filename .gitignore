@@ -1,4 +1,6 @@
+/.cargo
 /.direnv
+/.rustup
 /result
 /target
 /flamegraph.svg
