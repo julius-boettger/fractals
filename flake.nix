@@ -2,17 +2,13 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
     systems.url = "github:nix-systems/default"; # can run on all systems
-    rust-overlay = { url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs"; };
   };
 
-  outputs = { self, nixpkgs, systems, rust-overlay, ... }:
+  outputs = { self, nixpkgs, systems, ... }:
   let
     eachSystem = fn: nixpkgs.lib.genAttrs (import systems) (system: fn system (import nixpkgs {
-      inherit system overlays;
+      inherit system;
     }));
-
-    overlays = [ rust-overlay.overlays.default ];
 
     runtimeDeps = pkgs: with pkgs; [
       vulkan-loader # for wgpu vulkan backend
@@ -47,57 +43,36 @@
         # display backtrace
         RUST_BACKTRACE = 1;
 
-        # dont pollute $HOME
-        CARGO_HOME = ".cargo";
-        RUSTUP_HOME = ".rustup";
+        CARGO_HOME = ".cross/.cargo";
+        RUSTUP_HOME = ".cross/.rustup";
 
         shellHook = ''
           rustup toolchain add stable
-          export PATH=".rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH"
-          export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
-          dockerd-rootless &
+          export PATH=".cross/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH"
         '';
 
-        # attempt: cross build --target x86_64-unknown-linux-musl
-        # see https://github.com/cross-rs/cross/issues/1383
-
         nativeBuildInputs = with pkgs; [
+          rustup
+
+          # attempt: cross build --target x86_64-unknown-linux-musl
+          # see https://github.com/cross-rs/cross/issues/1383
           docker
           rootlesskit
-          rustup
           cargo-cross
+          (pkgs.writeShellScriptBin "build-linux-musl" ''
+            export XARGO_HOME="$PWD/.cross/.xargo"
+            export DOCKER_DATA_ROOT="$PWD/.cross/docker"
+            export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 
-          (rust-bin.stable.latest.default.override {
-            # fix rust-analyzer in vscode
-            extensions = [ "rust-src" ];
-            # necessary for first command of release-windows, see comment below
-            targets = [ "x86_64-pc-windows-gnu" ];
-          })
+            dockerd-rootless &> /dev/null &
+            DOCKERD_PID=$!
 
-          # convenient command to create a linux 
-          (pkgs.writeShellScriptBin "release-linux" ''
-            rm -rf fractals-linux-x86_64
-            cargo build --target x86_64-unknown-linux-gnu --release "$@" || exit 1
-            cp target/x86_64-unknown-linux-gnu/release/fractals fractals-linux-x86_64 || exit 1
-            # should work for most linux distros
-            patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 fractals-linux-x86_64 || exit 1
-          '')
+            # wait until docker daemon has started
+            sleep 0.25
 
-          # convenient command to cross-compile to windows in second nix dev shell.
-          # first command (attempt build in current shell) is necessary to compile
-          # some crates that require the x86_64-pc-windows-gnu toolchain,
-          # which I was not able to set up in the second nix dev shell.
-          (pkgs.writeShellScriptBin "release-windows" ''
-            rm -rf fractals-windows-x86_64.exe
-                                           cargo build --target x86_64-pc-windows-gnu --release "$@"
-            nix develop .#cross-windows -c cargo build --target x86_64-pc-windows-gnu --release "$@" || exit 1
-            cp target/x86_64-pc-windows-gnu/release/fractals.exe fractals-windows-x86_64.exe || exit 1
-          '')
+            cross build --target x86_64-unknown-linux-musl "$@"
 
-          # convenient command to build supported release binaries
-          (pkgs.writeShellScriptBin "release" ''
-            release-linux || exit 1
-            release-windows || exit 1
+            kill $DOCKERD_PID
           '')
 
           cargo-edit # provides `cargo upgrade` for dependencies
@@ -105,23 +80,6 @@
                            # best used with CARGO_PROFILE_RELEASE_DEBUG=true
         ];
       };
-
-      # for cross-compiling to windows using mingw compiler with wine
-      cross-windows = let
-        cross-pkgs = import nixpkgs {
-          inherit system overlays;
-          crossSystem.config = "x86_64-w64-mingw32";
-        };
-      # callPackage is necessary (https://github.com/NixOS/nixpkgs/issues/49526)
-      in cross-pkgs.callPackage (
-        { mkShell, rust-bin, windows, stdenv }:
-        mkShell {
-          nativeBuildInputs = [ rust-bin.stable.latest.minimal ];
-          # necessary for cargo to work
-          buildInputs = [ windows.pthreads ];
-          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${stdenv.cc.targetPrefix}cc";
-        }
-      ) {};
     });
   };
 }
