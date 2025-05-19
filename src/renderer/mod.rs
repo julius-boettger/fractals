@@ -534,14 +534,19 @@ pub fn render() {
             // best we can do is match the formatted error string
             let error_string = format!("{e:?}");
 
-            if error_string.contains("WaylandError(Connection(NoWaylandLib))") {
-                log::error!("wayland libraries (libwayland-client.so/-cursor.so/-egl.so) not found, consider installing them.");
-                std::process::exit(1)
-            }
+            const ERROR_TABLE: &[(&str, &str)] = &[
+                ("WaylandError(Connection(NoWaylandLib))", "wayland libraries (libwayland-client.so/-cursor.so/-egl.so) not found, consider installing them."),
+                ("WaylandError(Connection(NoCompositor))", "no running wayland compositor found.\nthis may be caused by an unusual setup which winit (https://docs.rs/winit) does not understand."),
+                ("libXi.so", "xorg library libXi.so not found, consider installing it."),
+                ("libX11.so", "xorg library libX11.so not found, consider installing it."),
+                ("libXcursor.so", "xorg library libXcursor.so not found, consider installing it."),
+            ];
 
-            if error_string.contains("WaylandError(Connection(NoCompositor))") {
-                log::error!("no running wayland compositor found.\nthis may be caused by an unusual setup which winit (https://docs.rs/winit) does not understand.");
-                std::process::exit(1)
+            for error_desc in ERROR_TABLE {
+                if error_string.contains(error_desc.0) {
+                    log::error!("{}", error_desc.1);
+                    std::process::exit(1)
+                }
             }
 
             panic!("{:?}", e);
