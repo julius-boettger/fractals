@@ -1,5 +1,6 @@
-/.cross
 /.direnv
+/.docker
+/.rust
 /result
 /target
 /flamegraph.svg

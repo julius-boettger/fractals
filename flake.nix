@@ -43,9 +43,10 @@
         # display backtrace
         RUST_BACKTRACE = 1;
 
+        # use rust with local rustup toolchain from rustup
         shellHook = ''
-          export CARGO_HOME="$PWD/.cross/.cargo"
-          export RUSTUP_HOME="$PWD/.cross/.rustup"
+          export CARGO_HOME="$PWD/.rust/.cargo"
+          export RUSTUP_HOME="$PWD/.rust/.rustup"
           export PATH="$PATH:$CARGO_HOME/bin"
           export PATH="$PATH:$RUSTUP_HOME/toolchains/stable-x86_64-unknown-linux-gnu/bin"
         '';
@@ -53,14 +54,17 @@
         nativeBuildInputs = with pkgs; [
           rustup
 
-          # attempt: cross build --target x86_64-unknown-linux-musl
+          cargo-edit # provides `cargo upgrade` for dependencies
+          cargo-flamegraph # provides `cargo flamegraph` for profiling
+                           # best used with CARGO_PROFILE_RELEASE_DEBUG=true
+
+          # attempt: cross compile for linux musl
           # see https://github.com/cross-rs/cross/issues/1383
-          docker
-          rootlesskit
           cargo-cross
+          docker rootlesskit
           (pkgs.writeShellScriptBin "build-linux-musl" ''
-            export XARGO_HOME="$PWD/.cross/.xargo"
-            export DOCKER_DATA_ROOT="$PWD/.cross/docker"
+            export XARGO_HOME="$PWD/.rust/.xargo"
+            export DOCKER_DATA_ROOT="$PWD/.docker"
             export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 
             dockerd-rootless &> /dev/null &
@@ -73,10 +77,6 @@
 
             kill $DOCKERD_PID
           '')
-
-          cargo-edit # provides `cargo upgrade` for dependencies
-          cargo-flamegraph # provides `cargo flamegraph` for profiling
-                           # best used with CARGO_PROFILE_RELEASE_DEBUG=true
         ];
       };
     });
