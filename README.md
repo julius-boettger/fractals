@@ -38,7 +38,6 @@
 ## Build and run from source
 
 ### Using [Nix Flakes](https://wiki.nixos.org/wiki/Flakes)
-> probably only works with Linux and Wayland
 ```sh
 # option 1: fully automatic
 nix run github:julius-boettger/fractals

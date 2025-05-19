@@ -15,11 +15,11 @@
     overlays = [ rust-overlay.overlays.default ];
 
     runtimeDeps = pkgs: with pkgs; [
+      vulkan-loader # for wgpu vulkan backend
       # for winit (https://github.com/rust-windowing/winit/issues/3244)
+      libxkbcommon # keyboard input
       wayland
-      libxkbcommon
-      # for the wgpu vulkan backend
-      vulkan-loader
+      xorg.libX11 xorg.libXi xorg.libXcursor
     ];
   in
   {
