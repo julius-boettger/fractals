@@ -43,12 +43,11 @@
         # display backtrace
         RUST_BACKTRACE = 1;
 
-        CARGO_HOME = ".cross/.cargo";
-        RUSTUP_HOME = ".cross/.rustup";
-
         shellHook = ''
-          rustup toolchain add stable
-          export PATH=".cross/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH"
+          export CARGO_HOME="$PWD/.cross/.cargo"
+          export RUSTUP_HOME="$PWD/.cross/.rustup"
+          export PATH="$PATH:$CARGO_HOME/bin"
+          export PATH="$PATH:$RUSTUP_HOME/toolchains/stable-x86_64-unknown-linux-gnu/bin"
         '';
 
         nativeBuildInputs = with pkgs; [
