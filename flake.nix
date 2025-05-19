@@ -51,24 +51,34 @@
           (rust-bin.stable.latest.default.override {
             # fix rust-analyzer in vscode
             extensions = [ "rust-src" ];
-            # necessary for first command of build-windows, see comment below
+            # necessary for first command of release-windows, see comment below
             targets = [ "x86_64-pc-windows-gnu" ];
           })
+
+          # convenient command to create a linux 
+          (pkgs.writeShellScriptBin "release-linux" ''
+            rm -rf fractals-linux-x86_64
+            cargo build --target x86_64-unknown-linux-gnu --release "$@" || exit 1
+            cp target/x86_64-unknown-linux-gnu/release/fractals fractals-linux-x86_64 || exit 1
+            # should work for most linux distros
+            patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 fractals-linux-x86_64 || exit 1
+          '')
 
           # convenient command to cross-compile to windows in second nix dev shell.
           # first command (attempt build in current shell) is necessary to compile
           # some crates that require the x86_64-pc-windows-gnu toolchain,
           # which I was not able to set up in the second nix dev shell.
-          (pkgs.writeShellScriptBin "build-windows" ''
-                                           cargo build --target x86_64-pc-windows-gnu "$@"
-            nix develop .#cross-windows -c cargo build --target x86_64-pc-windows-gnu "$@"
+          (pkgs.writeShellScriptBin "release-windows" ''
+            rm -rf fractals-windows-x86_64.exe
+                                           cargo build --target x86_64-pc-windows-gnu --release "$@"
+            nix develop .#cross-windows -c cargo build --target x86_64-pc-windows-gnu --release "$@" || exit 1
+            cp target/x86_64-pc-windows-gnu/release/fractals.exe fractals-windows-x86_64.exe || exit 1
           '')
 
           # convenient command to build supported release binaries
           (pkgs.writeShellScriptBin "release" ''
-            rm -rf fractals-windows-x86_64.exe
-            build-windows --release || exit 1
-            cp target/x86_64-pc-windows-gnu/release/fractals.exe fractals-windows-x86_64.exe
+            release-linux || exit 1
+            release-windows || exit 1
           '')
 
           cargo-edit # provides `cargo upgrade` for dependencies
