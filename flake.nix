@@ -58,11 +58,11 @@
           cargo-flamegraph # provides `cargo flamegraph` for profiling
                            # best used with CARGO_PROFILE_RELEASE_DEBUG=true
 
-          # attempt: cross compile for linux musl
+          # attempt: cross compilation
           # see https://github.com/cross-rs/cross/issues/1383
           cargo-cross
           docker rootlesskit
-          (pkgs.writeShellScriptBin "build-linux-musl" ''
+          (pkgs.writeShellScriptBin "cross-build" ''
             export XARGO_HOME="$PWD/.rust/.xargo"
             export DOCKER_DATA_ROOT="$PWD/.docker"
             export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
@@ -73,7 +73,7 @@
             # wait until docker daemon has started
             sleep 0.25
 
-            cross build --target x86_64-unknown-linux-musl "$@"
+            cross build --release --target "$@"
 
             kill $DOCKERD_PID
           '')
