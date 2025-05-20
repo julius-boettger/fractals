@@ -25,7 +25,7 @@ impl Curve for SierpinskiTriangle {
     fn     data(&    self) -> &    Vec<Vec<Vertex>> { &    self.data }
     fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>> { &mut self.data }
 
-    fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex> {
+    fn next_iteration(&self, last_vertices: &[Vertex], iteration: u32) -> Vec<Vertex> {
         last_vertices.par_chunks(3).map(|triangle| {
             let top = triangle[0].position;
             let left = triangle[1].position;

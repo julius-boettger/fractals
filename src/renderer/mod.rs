@@ -284,11 +284,11 @@ impl State {
         let vertices = self.curve_instance.vertices(self.iteration);
 
         let vertices = match vertex_format {
-            VertexFormat::Lines => &vertex::lines_as_triangles(&vertices, 0.005),
+            VertexFormat::Lines => &vertex::lines_as_triangles(vertices, 0.005),
             VertexFormat::Triangles => vertices,
         };
 
-        let (vertices, indices) = vertex::index(&vertices);
+        let (vertices, indices) = vertex::index(vertices);
 
         self.num_indices = indices.len().try_into().unwrap();
 

@@ -75,7 +75,7 @@ impl Curve for Canopy {
     fn     data(&    self) -> &    Vec<Vec<Vertex>> { &    self.data }
     fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>> { &mut self.data }
 
-    fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex> {
+    fn next_iteration(&self, last_vertices: &[Vertex], iteration: u32) -> Vec<Vertex> {
         last_vertices
             .par_chunks(2)
             // just lines with highest iteration 

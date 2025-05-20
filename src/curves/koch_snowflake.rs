@@ -37,7 +37,7 @@ impl Curve for KochSnowflake {
     fn     data(&    self) -> &    Vec<Vec<Vertex>> { &    self.data }
     fn mut_data(&mut self) -> &mut Vec<Vec<Vertex>> { &mut self.data }
 
-    fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex> {
+    fn next_iteration(&self, last_vertices: &[Vertex], iteration: u32) -> Vec<Vertex> {
         last_vertices.par_chunks(2).map(|line| {
             let (a, b) = (line[0].position, line[1].position);
             let (a_iter, b_iter) = (line[0].iteration, line[1].iteration);

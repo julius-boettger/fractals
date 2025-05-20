@@ -49,7 +49,7 @@ pub trait Curve: std::any::Any {
     fn vertex_format(&self) -> VertexFormat;
     fn default_iteration(&self) -> usize;
 
-    fn next_iteration(&self, last_vertices: &Vec<Vertex>, iteration: u32) -> Vec<Vertex>;
+    fn next_iteration(&self, last_vertices: &[Vertex], iteration: u32) -> Vec<Vertex>;
 
     /// one element for each iteration
     fn     data(&    self) -> &    Vec<Vec<Vertex>>;
