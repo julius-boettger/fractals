@@ -418,77 +418,75 @@ impl ApplicationHandler for App {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
-        macro_rules! key_pressed {
-            ($key:ident) => {
-                WindowEvent::KeyboardInput {
-                    event: KeyEvent {
-                        state: ElementState::Pressed,
-                        physical_key: PhysicalKey::Code(KeyCode::$key),
-                        ..
-                    },
-                    ..
-                }
-            };
-        }
-
         let state = self.state.as_mut().unwrap();
         match event {
-            key_pressed!(ArrowUp) => {
-                state.iteration += 1;
-                state.update_buffers();
-            },
-            key_pressed!(ArrowDown) => {
-                if state.iteration > 0 {
-                    state.iteration -= 1;
+            WindowEvent::KeyboardInput {
+                event: KeyEvent {
+                    state: ElementState::Pressed,
+                    physical_key: PhysicalKey::Code(key),
+                    ..
+                },
+                ..
+            } => match key {
+                KeyCode::ArrowUp => {
+                    state.iteration += 1;
                     state.update_buffers();
-                }
-            },
+                },
+                KeyCode::ArrowDown => {
+                    if state.iteration > 0 {
+                        state.iteration -= 1;
+                        state.update_buffers();
+                    }
+                },
 
-            key_pressed!(ArrowLeft) => {
-                state.curve.prev();
-                state.initialize_curve();
-            },
-            key_pressed!(ArrowRight) => {
-                state.curve.next();
-                state.initialize_curve();
-            },
+                KeyCode::ArrowLeft => {
+                    state.curve.prev();
+                    state.initialize_curve();
+                },
+                KeyCode::ArrowRight => {
+                    state.curve.next();
+                    state.initialize_curve();
+                },
 
-            key_pressed!(KeyF) => {
-                if state.curve != Curves::Canopy { return; }
-                if Canopy::downcast(&mut state.curve_instance).change_angle(true, true) {
-                    state.redo_curve();
-                }
-            },
-            key_pressed!(KeyD) => {
-                if state.curve != Curves::Canopy { return; }
-                if Canopy::downcast(&mut state.curve_instance).change_angle(false, true) {
-                    state.redo_curve();
-                }
-            },
-            key_pressed!(KeyJ) => {
-                if state.curve != Curves::Canopy { return; }
-                if Canopy::downcast(&mut state.curve_instance).change_angle(true, false) {
-                    state.redo_curve();
-                }
-            },
-            key_pressed!(KeyK) => {
-                if state.curve != Curves::Canopy { return; }
-                if Canopy::downcast(&mut state.curve_instance).change_angle(false, false) {
-                    state.redo_curve();
-                }
-            },
+                KeyCode::KeyF => {
+                    if state.curve != Curves::Canopy { return; }
+                    if Canopy::downcast(&mut state.curve_instance).change_angle(true, true) {
+                        state.redo_curve();
+                    }
+                },
+                KeyCode::KeyD => {
+                    if state.curve != Curves::Canopy { return; }
+                    if Canopy::downcast(&mut state.curve_instance).change_angle(false, true) {
+                        state.redo_curve();
+                    }
+                },
+                KeyCode::KeyJ => {
+                    if state.curve != Curves::Canopy { return; }
+                    if Canopy::downcast(&mut state.curve_instance).change_angle(true, false) {
+                        state.redo_curve();
+                    }
+                },
+                KeyCode::KeyK => {
+                    if state.curve != Curves::Canopy { return; }
+                    if Canopy::downcast(&mut state.curve_instance).change_angle(false, false) {
+                        state.redo_curve();
+                    }
+                },
 
-            key_pressed!(Space) => {
-                if state.animate {
-                    state.animate = false;
-                } else {
-                    state.animate = true;
-                    state.update_animation_value(true);
-                    // to jump-start constantly rendering new frames again
-                    state.window.request_redraw();
-                }
+                KeyCode::Space => {
+                    if state.animate {
+                        state.animate = false;
+                    } else {
+                        state.animate = true;
+                        state.update_animation_value(true);
+                        // to jump-start constantly rendering new frames again
+                        state.window.request_redraw();
+                    }
 
-                state.set_control_flow(event_loop);
+                    state.set_control_flow(event_loop);
+                },
+
+                _ => ()
             },
 
             WindowEvent::RedrawRequested => {
