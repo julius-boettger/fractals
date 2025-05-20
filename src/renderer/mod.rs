@@ -13,7 +13,7 @@ use winit::{
     window::{Icon, Window, WindowId}
 };
 
-use vertex::{Vertex, VertexFormat};
+use vertex::{Vertex, VertexFormat, vec2::Vec2};
 use crate::curves::{*, canopy::*};
 
 // store icon in executable so we can still distribute just a single file
@@ -32,6 +32,9 @@ struct UniformBufferContent {
     max_iteration: u32,
     /// ever-changing value in range [0.0, 1.0) for color animation
     animation_value: f32,
+    /// x, y in range (0.0, 1.0] to maintain the same aspect ratio
+    /// of the window content independent of the aspect ratio of the window
+    position_scale: Vec2,
 }
 
 struct State {
@@ -211,6 +214,15 @@ impl State {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+
+            // maintain same aspect ratio of content independent of window size
+            self.uniform_buffer_content.position_scale = match new_size.width as f32 / new_size.height as f32 {
+                x if x > 1. => Vec2::new(1. / x, 1.),
+                x if x < 1. => Vec2::new(1., x),
+                _ => Vec2::new(1., 1.),
+            };
+            self.update_uniform_buffer();
+
             self.surface_configured = true;
         }
     }

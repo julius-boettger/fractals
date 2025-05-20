@@ -2,7 +2,7 @@ use std::ops;
 
 #[repr(C)]
 #[derive(
-    Clone, Copy, PartialEq, Debug,
+    Clone, Copy, PartialEq, Debug, Default,
     // allow bitwise casts with bytemuck
     bytemuck::Zeroable, bytemuck::Pod,
 )]

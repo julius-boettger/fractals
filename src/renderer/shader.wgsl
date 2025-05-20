@@ -1,6 +1,7 @@
 struct Globals {
     max_iteration: u32,
     animation_value: f32,
+    position_scale: vec2<f32>,
 };
 @group(0) @binding(0)
 var<uniform> globals: Globals;
@@ -62,7 +63,9 @@ fn vertex(in: VertexInput) -> VertexOutput {
 
     ////////// position //////////
 
-    out.position = vec4(pos, 0, 1);
+    // to maintain aspect ratio
+    let scaled_position = pos * globals.position_scale;
+    out.position = vec4(scaled_position, 0, 1);
 
     ////////// color //////////
     // compute color here, as moving any of this logic
