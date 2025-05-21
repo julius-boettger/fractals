@@ -21,13 +21,14 @@
 
 ### Controls
 
-- `SPACE`: Start/stop animation
 - `←`/`→`: Cycle through different fractals
 - `↑`/`↓`: Increase/decrease fractal iteration
   - ⚠️ Careful: Memory usage increases exponentially with every iteration increase. When you eventually run out of memory, your operating system will (hopefully) attempt to prevent itself from crashing by killing this process.
 - Only when viewing [Canopy](https://en.wikipedia.org/wiki/Fractal_canopy):
   - `F`/`D`: Increase/decrease left angle
   - `J`/`K`: Increase/decrease right angle
+- `F11`: Toggle fullscreen
+- `SPACE`: Start/stop animation
 
 # Installation
 

@@ -473,6 +473,13 @@ impl ApplicationHandler for App {
                     }
                 },
 
+                KeyCode::F11 => {
+                    state.window.set_fullscreen(match state.window.fullscreen() {
+                        None => Some(winit::window::Fullscreen::Borderless(None)),
+                        Some(_) => None,
+                    });
+                },
+
                 KeyCode::Space => {
                     if state.animate {
                         state.animate = false;
