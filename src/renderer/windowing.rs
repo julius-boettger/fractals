@@ -9,7 +9,7 @@ use winit::{
 };
 
 use super::state::State;
-use crate::curves::{*, canopy::*};
+use crate::curves::{Curve, Curves, canopy::Canopy};
 
 #[derive(Default)]
 struct App {
@@ -156,7 +156,7 @@ impl ApplicationHandler for App {
                         event_loop.exit();
                     }
 
-                    Ok(_) => ()
+                    Ok(()) => ()
                 }
 
                 if state.animate {
@@ -184,10 +184,6 @@ pub fn run_app() {
 
         #[cfg(target_os = "linux")]
         Err(EventLoopError::Os(e)) => {
-            // cant use pattern matching because error types are private,
-            // best we can do is match the formatted error string
-            let error_string = format!("{e:?}");
-
             const ERROR_TABLE: &[(&str, &str)] = &[
                 ("WaylandError(Connection(NoWaylandLib))", "wayland libraries (libwayland-client.so/-cursor.so/-egl.so) not found, consider installing them."),
                 ("WaylandError(Connection(NoCompositor))", "no running wayland compositor found.\nthis may be caused by an unusual setup which winit (https://docs.rs/winit) does not understand."),
@@ -196,6 +192,10 @@ pub fn run_app() {
                 ("libXcursor.so", "xorg library libXcursor.so not found, consider installing it."),
             ];
 
+            // cant use pattern matching because error types are private,
+            // best we can do is match the formatted error string
+            let error_string = format!("{e:?}");
+
             for error_desc in ERROR_TABLE {
                 if error_string.contains(error_desc.0) {
                     log::error!("{}", error_desc.1);
@@ -203,10 +203,10 @@ pub fn run_app() {
                 }
             }
 
-            panic!("{:?}", e);
+            panic!("{e:?}");
         },
 
-        Err(e) => panic!("{:?}", e)
+        Err(e) => panic!("{e:?}")
     };
 
     let mut app = App::default();

@@ -8,7 +8,7 @@ use winit::{
 };
 
 use super::vertex::{self, Vertex, VertexFormat, vec2::Vec2};
-use crate::curves::*;
+use crate::curves::{Curve, Curves};
 
 /// how many seconds an animation cycle should take.
 /// must be < 60.
@@ -62,6 +62,7 @@ pub struct State {
 }
 
 impl State {
+    #[allow(clippy::too_many_lines)]
     pub async fn new(window: Arc<Window>) -> Self {
         let size = window.inner_size();
 
@@ -96,7 +97,7 @@ impl State {
         }).await.unwrap();
 
         // actual gpu device and rendering queue
-        let (device, queue) = adapter.request_device(&Default::default()).await.unwrap();
+        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await.unwrap();
 
         let surface_caps = surface.get_capabilities(&adapter);
 
@@ -124,7 +125,7 @@ impl State {
         let animation_value_offset = 0.;
         let iteration = curve_instance.default_iteration();
         let num_indices = Default::default();
-        let uniform_buffer_content = Default::default();
+        let uniform_buffer_content = UniformBufferContent::default();
         let vertex_buffer = None;
         let index_buffer = None;
 
@@ -171,7 +172,7 @@ impl State {
                 module: &shader,
                 entry_point: Some("vertex"),
                 buffers: &[Vertex::buffer_layout()],
-                compilation_options: Default::default(),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -181,7 +182,7 @@ impl State {
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
-                compilation_options: Default::default(),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -189,13 +190,13 @@ impl State {
                 cull_mode: Some(wgpu::Face::Back),
                 ..Default::default()
             },
-            multisample: Default::default(),
+            multisample: wgpu::MultisampleState::default(),
             depth_stencil: None,
             multiview: None,
             cache: None,
         });
 
-        let mut state = Self { surface, surface_configured, device, queue, config, curve, curve_instance, animate, animation_value_offset, iteration, size, window, num_indices, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline };
+        let mut state = Self { surface, device, queue, config, uniform_buffer_content, vertex_buffer, index_buffer, uniform_buffer, uniform_buffer_bind_group, render_pipeline, num_indices, window, size, curve, curve_instance, surface_configured, animate, animation_value_offset, iteration };
         state.update_buffers();
         state
     }
@@ -208,7 +209,9 @@ impl State {
             self.surface.configure(&self.device, &self.config);
 
             // maintain same aspect ratio of content independent of window size
-            self.uniform_buffer_content.position_scale = match new_size.width as f32 / new_size.height as f32 {
+            #[allow(clippy::cast_precision_loss)]
+            let ratio = new_size.width as f32 / new_size.height as f32;
+            self.uniform_buffer_content.position_scale = match ratio {
                 x if x > 1. => Vec2::new(1. / x, 1.),
                 x if x < 1. => Vec2::new(1., x),
                 _ => Vec2::new(1., 1.),
@@ -220,9 +223,10 @@ impl State {
     }
 
     pub fn set_control_flow(&self, event_loop: &ActiveEventLoop) {
-        event_loop.set_control_flow(match self.animate {
-            true  => ControlFlow::Poll, // for rendering moving images
-            false => ControlFlow::Wait, // for rendering still images
+        event_loop.set_control_flow(if self.animate {
+            ControlFlow::Poll // for rendering moving images
+        } else {
+            ControlFlow::Wait // for rendering still images
         });
     }
 
@@ -238,7 +242,7 @@ impl State {
         self.update_buffers();
     }
 
-    pub fn update_uniform_buffer(&mut self) {
+    pub fn update_uniform_buffer(&self) {
         self.queue.write_buffer(&self.uniform_buffer, 0,
             bytemuck::cast_slice(&[self.uniform_buffer_content]));
     }
@@ -252,11 +256,15 @@ impl State {
                 .unwrap();
     
             // in seconds, in range [0.0, 1.0)
+            #[allow(clippy::cast_precision_loss)]
             let nanoseconds = now.subsec_nanos() as f32 * 1e-9;
             // in range [0, 60)
             let seconds = now.as_secs() % 60;
 
-            seconds as f32 + nanoseconds
+            #[allow(clippy::cast_precision_loss)]
+            let seconds_with_precision = seconds as f32 + nanoseconds;
+
+            seconds_with_precision
         };
 
         // in range [0.0, 1.0)
@@ -272,6 +280,8 @@ impl State {
     }
 
     pub fn update_buffers(&mut self) {
+        use bytemuck::cast_slice;
+
         let vertex_format = self.curve_instance.vertex_format();
         let vertices = self.curve_instance.vertices(self.iteration);
 
@@ -290,11 +300,10 @@ impl State {
             .unwrap();
 
         // cast buffer data to slice of bytes
-        use bytemuck::cast_slice;
         let vertices = cast_slice(vertices.as_slice());
         let indices = cast_slice(indices.as_slice());
 
-        if vertices.len() > self.device.limits().max_buffer_size as usize {
+        if vertices.len() as u64 > self.device.limits().max_buffer_size {
             log::error!("computed vertices are too large to buffer on this device");
             std::process::exit(1);
         }
@@ -321,7 +330,7 @@ impl State {
         self.window.request_redraw();
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&self) -> Result<(), wgpu::SurfaceError> {
         // wait until surface has been configured
         if !self.surface_configured {
             return Ok(());
@@ -330,7 +339,7 @@ impl State {
         // frame to render to
         let output = self.surface.get_current_texture()?;
 
-        let view = output.texture.create_view(&Default::default());
+        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // buffer to send commands to the gpu
         let mut encoder = self.device.create_command_encoder(

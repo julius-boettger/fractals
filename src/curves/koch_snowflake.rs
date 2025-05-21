@@ -3,7 +3,7 @@ use rayon::prelude::*;
 use crate::curves::Curve;
 use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
-/// https://en.wikipedia.org/wiki/Koch_snowflake
+/// <https://en.wikipedia.org/wiki/Koch_snowflake>
 pub struct KochSnowflake {
     data: Vec<Vec<Vertex>>
 }

@@ -4,7 +4,7 @@ use std::f32::consts::PI;
 use crate::curves::Curve;
 use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
-/// https://en.wikipedia.org/wiki/Fractal_canopy
+/// <https://en.wikipedia.org/wiki/Fractal_canopy>
 pub struct Canopy {
     data: Vec<Vec<Vertex>>,
     /// factor of PI
@@ -31,24 +31,28 @@ impl Canopy {
     /// `!increment == decrement` <br>
     /// `!left == right`
     pub fn change_angle(&mut self, increment: bool, left: bool) -> bool {
-        let angle = match left {
-            true => &mut self.left_angle,
-            false => &mut self.right_angle,
+        let angle = if left {
+            &mut self.left_angle
+        } else {
+            &mut self.right_angle
         };
 
-        *angle += match increment {
-            true => Self::ANGLE_INCREMENT,
-            false => -Self::ANGLE_INCREMENT,
+        *angle += if increment {
+            Self::ANGLE_INCREMENT
+        } else {
+            -Self::ANGLE_INCREMENT
         };
 
         let clamped_angle = angle.clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
         // changed in range
+        #[allow(clippy::float_cmp)]
         let changed = *angle == clamped_angle;
 
-        match changed {
-            true => log::info!("set {} angle to {:.2}π", if left { "left" } else { "right" }, angle),
+        if changed {
+            log::info!("set {} angle to {:.2}π", if left { "left" } else { "right" }, angle);
+        } else {
             // ensure range
-            false => *angle = clamped_angle,
+            *angle = clamped_angle;
         }
 
         changed

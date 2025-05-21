@@ -6,7 +6,7 @@ use strum::IntoEnumIterator;
 
 use crate::renderer::vertex::{Vertex, VertexFormat};
 
-#[derive(Default, PartialEq, strum::EnumIter)]
+#[derive(Default, PartialEq, Eq, strum::EnumIter)]
 pub enum Curves {
     #[default] // first rendered on program start
     Canopy,
@@ -25,7 +25,7 @@ impl Curves {
     pub fn next(&mut self) {
         let mut cycle = Self::iter().cycle();
         while cycle.next().unwrap() != *self {}
-        *self = cycle.next().unwrap()
+        *self = cycle.next().unwrap();
     }
 
     pub fn prev(&mut self) {
@@ -36,11 +36,11 @@ impl Curves {
             next1 = next2;
             next2 = cycle.next().unwrap();
         }
-        *self = next1
+        *self = next1;
     }
 }
 
-/// https://en.wikipedia.org/wiki/Fractal_curve
+/// <https://en.wikipedia.org/wiki/Fractal_curve>
 pub trait Curve: std::any::Any {
     fn new() -> Self
         where Self: Sized; // for dyn-compatability

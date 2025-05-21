@@ -22,15 +22,16 @@ impl Vec2 {
         Self::new(f(self.x), f(self.y))
     }
 
-    pub fn len(&self) -> f32 {
-        (self.x.powf(2.) + self.y.powf(2.)).sqrt()
+    pub fn len(self) -> f32 {
+        self.x.hypot(self.y)
     }
 
-    pub fn set_len(&self, len: f32) -> Self {
+    pub fn set_len(self, len: f32) -> Self {
         let current_len= self.len();
 
+        #[allow(clippy::float_cmp)]
         if current_len == len {
-            return *self;
+            return self;
         }
 
         let normalized = self.map(|x| x / current_len);
@@ -39,23 +40,23 @@ impl Vec2 {
     }
 
     /// clockwise/+90° orthogonal vector of self with same length
-    pub const fn clockwise_orthogonal(&self) -> Self {
-        Vec2::new(self.y, -self.x)
+    pub const fn clockwise_orthogonal(self) -> Self {
+        Self::new(self.y, -self.x)
     }
 
     /// clockwise, angle in radians
-    pub fn rotate_cw(&self, angle: f32) -> Self {
-        Vec2::new(
-             self.x * angle.cos() + self.y * angle.sin(),
-            -self.x * angle.sin() + self.y * angle.cos(),
+    pub fn rotate_cw(self, angle: f32) -> Self {
+        Self::new(
+              self.x .mul_add(angle.cos(), self.y * angle.sin()),
+            (-self.x).mul_add(angle.sin(), self.y * angle.cos()),
         )
     }
 
     /// counterclockwise, angle in radians
-    pub fn rotate_ccw(&self, angle: f32) -> Self {
-        Vec2::new(
-            self.x * angle.cos() - self.y * angle.sin(),
-            self.x * angle.sin() + self.y * angle.cos(),
+    pub fn rotate_ccw(self, angle: f32) -> Self {
+        Self::new(
+            self.x.mul_add(angle.cos(), -(self.y * angle.sin())),
+            self.x.mul_add(angle.sin(),   self.y * angle.cos() ),
         )
     }
 }
