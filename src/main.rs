@@ -8,5 +8,5 @@ fn main() {
             .default_filter_or("error,fractals=info")
     ).init();
 
-    renderer::render();
+    renderer::run();
 }
