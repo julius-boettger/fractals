@@ -4,7 +4,7 @@ pub mod sierpinski_triangle;
 
 use strum::IntoEnumIterator;
 
-use crate::renderer::vertex::{Vertex, VertexFormat};
+use crate::rendering::vertex::{Vertex, VertexFormat};
 
 #[derive(Default, PartialEq, Eq, strum::EnumIter)]
 pub enum Curves {

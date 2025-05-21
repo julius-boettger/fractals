@@ -1,5 +1,5 @@
 mod curves;
-mod renderer;
+mod rendering;
 
 fn main() {
     // set up logger with default level if env var RUST_LOG is unset
@@ -8,5 +8,5 @@ fn main() {
             .default_filter_or("error,fractals=info")
     ).init();
 
-    renderer::run();
+    rendering::run();
 }

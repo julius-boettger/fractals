@@ -1,7 +1,7 @@
 use rayon::prelude::*;
 
-use crate::curves::Curve;
-use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
+use super::Curve;
+use crate::rendering::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
 /// <https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle>
 pub struct SierpinskiTriangle {

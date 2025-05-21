@@ -1,8 +1,8 @@
 use rayon::prelude::*;
 use std::f32::consts::PI;
 
-use crate::curves::Curve;
-use crate::renderer::vertex::{Vertex, VertexFormat, vec2::Vec2};
+use super::Curve;
+use crate::rendering::vertex::{Vertex, VertexFormat, vec2::Vec2};
 
 /// <https://en.wikipedia.org/wiki/Fractal_canopy>
 pub struct Canopy {
