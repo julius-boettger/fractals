@@ -45,8 +45,7 @@ impl Canopy {
 
         let clamped_angle = angle.clamp(Self::ANGLE_MIN, Self::ANGLE_MAX);
         // changed in range
-        #[allow(clippy::float_cmp)]
-        let changed = *angle == clamped_angle;
+        let changed = (*angle - clamped_angle).abs() < Self::ANGLE_INCREMENT;
 
         if changed {
             log::info!("set {} angle to {:.2}π", if left { "left" } else { "right" }, angle);
