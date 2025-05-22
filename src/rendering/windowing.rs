@@ -55,6 +55,9 @@ impl ApplicationHandler for App {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+        #[allow(clippy::enum_glob_use)]
+        use KeyCode::*;
+
         let state = self.state.as_mut().unwrap();
         match event {
             WindowEvent::KeyboardInput {
@@ -65,59 +68,54 @@ impl ApplicationHandler for App {
                 },
                 ..
             } => match key {
-                KeyCode::ArrowUp => {
+                ArrowUp => {
                     state.iteration += 1;
                     state.update_buffers();
                 },
-                KeyCode::ArrowDown => {
+                ArrowDown => {
                     if state.iteration > 0 {
                         state.iteration -= 1;
                         state.update_buffers();
                     }
                 },
 
-                KeyCode::ArrowLeft => {
+                ArrowLeft => {
                     state.curve.prev();
                     state.initialize_curve();
                 },
-                KeyCode::ArrowRight => {
+                ArrowRight => {
                     state.curve.next();
                     state.initialize_curve();
                 },
 
-                KeyCode::KeyF => {
-                    if state.curve != Curves::Canopy { return; }
-                    if Canopy::downcast(&mut state.curve_instance).change_angle(true, true) {
-                        state.redo_curve();
+                key @ (KeyF | KeyD | KeyJ | KeyK) => {
+                    if state.curve != Curves::Canopy {
+                        return;
                     }
-                },
-                KeyCode::KeyD => {
-                    if state.curve != Curves::Canopy { return; }
-                    if Canopy::downcast(&mut state.curve_instance).change_angle(false, true) {
-                        state.redo_curve();
-                    }
-                },
-                KeyCode::KeyJ => {
-                    if state.curve != Curves::Canopy { return; }
-                    if Canopy::downcast(&mut state.curve_instance).change_angle(true, false) {
-                        state.redo_curve();
-                    }
-                },
-                KeyCode::KeyK => {
-                    if state.curve != Curves::Canopy { return; }
-                    if Canopy::downcast(&mut state.curve_instance).change_angle(false, false) {
+
+                    let (increment, left) = match key {
+                        KeyF => ( true,  true),
+                        KeyD => (false,  true),
+                        KeyJ => ( true, false),
+                        KeyK => (false, false),
+                        _ => panic!(),
+                    };
+
+                    if Canopy::downcast(&mut state.curve_instance)
+                        .change_angle(increment, left)
+                    {
                         state.redo_curve();
                     }
                 },
 
-                KeyCode::F11 => {
+                F11 => {
                     state.window.set_fullscreen(match state.window.fullscreen() {
                         None => Some(winit::window::Fullscreen::Borderless(None)),
                         Some(_) => None,
                     });
                 },
 
-                KeyCode::Space => {
+                Space => {
                     if state.animate {
                         state.animate = false;
                     } else {
