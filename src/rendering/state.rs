@@ -15,6 +15,8 @@ use crate::curves::{Curve, Curves};
 const SECS_PER_ANIMATION_CYCLE: f32 = 5.;
 /// value of state.animate at startup 
 const INITIAL_ANIMATE: bool = true;
+/// for representing lines as triangles
+const LINE_WIDTH: f32 = 0.005;
 
 #[repr(C)]
 #[derive(Default, Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
@@ -286,7 +288,7 @@ impl State {
         let vertices = self.curve_instance.vertices(self.iteration);
 
         let vertices = match vertex_format {
-            VertexFormat::Lines => &vertex::lines_as_triangles(vertices, 0.005),
+            VertexFormat::Lines => &vertex::lines_as_triangles(vertices, LINE_WIDTH),
             VertexFormat::Triangles => vertices,
         };
 
