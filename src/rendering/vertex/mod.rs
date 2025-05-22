@@ -100,7 +100,7 @@ pub fn index(vertices: &[Vertex]) -> (Vec<Vertex>, Vec<u32>) {
         .map(|v| *vertex_index_map.get(&v).unwrap())
         .collect::<Vec<_>>();
 
-    log::info!("determined {} triangles to render\n", indices.len() / 3);
+    log::info!("determined {} triangles to render", indices.len() / 3);
     (unique_vertices, indices)
 }
 
