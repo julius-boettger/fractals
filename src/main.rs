@@ -2,16 +2,22 @@ mod curves;
 mod rendering;
 mod benchmark;
 
-fn main() {
-    let args: Vec<_> = std::env::args().collect();
-    if let Some(first_arg) = args.get(1) {
-        if first_arg == "bench" {
-            benchmark::run();
-            std::process::exit(0);
-        }
-    }
+use clap::Parser;
 
-    rendering::run();
+#[derive(Parser)]
+#[command(version, about)]
+struct Args {
+    /// Run CPU benchmark
+    #[arg(short, long)]
+    bench: bool,
+}
+
+fn main() {
+    if Args::parse().bench {
+        benchmark::run();
+    } else {
+        rendering::run();
+    }
 }
 
 /// set up logging with given level for this project if env var `RUST_LOG` is unset
