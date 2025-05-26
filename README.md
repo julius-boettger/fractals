@@ -21,6 +21,8 @@
 
 ### Controls
 
+When the fractal window is focused, you can interact with it using the following controls:
+
 - `←`/`→`: Cycle through different fractals
 - `↑`/`↓`: Increase/decrease fractal iteration
   - ⚠️ Careful: Memory usage increases exponentially with every iteration increase. When you eventually run out of memory, your operating system will (hopefully) attempt to prevent itself from crashing by killing this process.
@@ -29,6 +31,41 @@
   - `J`/`K`: Increase/decrease right angle
 - `F11`: Toggle fullscreen
 - `SPACE`: Start/stop animation
+
+### Command Line Arguments
+
+Run `fractals --help` or `fractals [COMMAND] --help` to see available options. You can...
+
+- Run a CPU/memory benchmark
+  - Adjust the fractal type
+  - Adjust the fractal iteration
+
+```
+> fractals --help
+Rendering fractals with wgpu
+
+Usage: fractals [COMMAND]
+
+Commands:
+  bench  Run CPU/memory benchmark by computing the triangles necessary to represent a given fractal iteration (without rendering it)
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
+
+```
+> fractals bench --help
+Run CPU/memory benchmark by computing the triangles necessary to represent a given fractal iteration (without rendering it)
+
+Usage: fractals bench [OPTIONS]
+
+Options:
+  -t, --type <TYPE>            Type of fractal to use [default: koch-snowflake] [possible values: canopy, koch-snowflake, sierpinski-triangle]
+  -i, --iteration <ITERATION>  Iteration to compute, 1 meaning the initial state. Be careful when increasing this, you will eventually run out of memory [default: 10]
+  -h, --help                   Print help
+```
 
 # Installation
 
