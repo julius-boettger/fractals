@@ -116,10 +116,6 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
         let offset1 = Vec2::new(-a_to_b.y,  a_to_b.x).set_len(line_width / 2.);
         let offset2 = Vec2::new( a_to_b.y, -a_to_b.x).set_len(line_width / 2.);
 
-        // on same line as vector to make smoother ends
-        let a_offset = (-a_to_b).set_len(line_width / 2.);
-        let b_offset = ( a_to_b).set_len(line_width / 2.);
-
         [
             // line as rectangle of two triangles
 
@@ -131,15 +127,20 @@ pub fn lines_as_triangles(vertices: &[Vertex], line_width: f32) -> Vec<Vertex> {
             Vertex::new(a + offset2, a_iter),
             Vertex::new(b + offset2, b_iter),
 
-            // smoother ends of line
+            //// smoother ends of line
+            // currently disabled, as this uses about 1.6x the memory per line
+            // while being very hard to notice visually
 
-            Vertex::new(a +  offset1, a_iter),
-            Vertex::new(a + a_offset, a_iter),
-            Vertex::new(a +  offset2, a_iter),
+            //let a_offset = (-a_to_b).set_len(line_width / 2.);
+            //let b_offset = ( a_to_b).set_len(line_width / 2.);
 
-            Vertex::new(b +  offset1, b_iter),
-            Vertex::new(b +  offset2, b_iter),
-            Vertex::new(b + b_offset, b_iter),
+            //Vertex::new(a +  offset1, a_iter),
+            //Vertex::new(a + a_offset, a_iter),
+            //Vertex::new(a +  offset2, a_iter),
+
+            //Vertex::new(b +  offset1, b_iter),
+            //Vertex::new(b +  offset2, b_iter),
+            //Vertex::new(b + b_offset, b_iter),
         ]
     }).flatten().collect()
 }
