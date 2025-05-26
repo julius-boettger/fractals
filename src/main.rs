@@ -16,18 +16,20 @@ enum Command {
     /// Run CPU/memory benchmark by computing the triangles necessary
     /// to represent a given fractal iteration (without rendering it)
     Bench {
-        /// Iteration to compute, 1 meaning the initial state
+        /// Type of fractal to use
+        #[arg(
+            short, long, value_enum,
+            default_value_t = curves::Curves::KochSnowflake,
+        )]
+        r#type: curves::Curves,
+        /// Iteration to compute, 1 meaning the initial state.
+        /// Be careful when increasing this, you will eventually run out of memory.
         #[arg(
             short, long,
             default_value_t = 10,
             value_parser = clap::value_parser!(i8).range(1..)
         )]
         iteration: i8,
-        #[arg(
-            short, long, value_enum,
-            default_value_t = curves::Curves::default(),
-        )]
-        r#type: curves::Curves
     },
 }
 
