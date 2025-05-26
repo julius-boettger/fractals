@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use winit::{
     application::ApplicationHandler,
-    error::EventLoopError,
     event::{ElementState, KeyEvent, WindowEvent},
     event_loop::{ActiveEventLoop, EventLoop},
     keyboard::{KeyCode, PhysicalKey},
@@ -181,7 +180,7 @@ pub fn run_app() {
         Ok(event_loop) => event_loop,
 
         #[cfg(target_os = "linux")]
-        Err(EventLoopError::Os(e)) => {
+        Err(winit::error::EventLoopError::Os(e)) => {
             const ERROR_TABLE: &[(&str, &str)] = &[
                 ("WaylandError(Connection(NoWaylandLib))", "wayland libraries (libwayland-client.so/-cursor.so/-egl.so) not found, consider installing them."),
                 ("WaylandError(Connection(NoCompositor))", "no running wayland compositor found.\nthis may be caused by an unusual setup which winit (https://docs.rs/winit) does not understand."),
