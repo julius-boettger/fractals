@@ -6,7 +6,7 @@ use strum::IntoEnumIterator;
 
 use crate::rendering::vertex::{Vertex, VertexFormat};
 
-#[derive(Default, PartialEq, Eq, strum::EnumIter)]
+#[derive(Default, PartialEq, Eq, Clone, strum::EnumIter, clap::ValueEnum)]
 pub enum Curves {
     #[default] // first rendered on program start
     Canopy,

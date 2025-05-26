@@ -1,17 +1,21 @@
-use crate::rendering::vertex;
-use crate::curves::{Curve, koch_snowflake::KochSnowflake};
+use crate::rendering::vertex::{self, VertexFormat};
+use crate::curves::Curves;
 
-/// can consume up to 7 GB of memory
-pub fn run() {
+#[allow(clippy::needless_pass_by_value)]
+pub fn run(iteration: usize, curve: Curves) {
     super::log_init("debug");
-    let mut koch_snowflake = KochSnowflake::new();
+    let mut curve_instance = curve.new_instance();
+    let vertex_format = curve_instance.vertex_format();
 
     log::info!("starting benchmark");
     let now = std::time::Instant::now();
 
-    let line_vertices = koch_snowflake.vertices(10);
-    let raw_vertices = vertex::lines_as_triangles(line_vertices, 0.005);
-    vertex::index(&raw_vertices);
+    let unformatted_vertices = curve_instance.vertices(iteration - 1);
+    let raw_vertices = match vertex_format {
+        VertexFormat::Lines => &vertex::lines_as_triangles(unformatted_vertices, 0.005),
+        VertexFormat::Triangles => unformatted_vertices,
+    };
+    vertex::index(raw_vertices);
 
     log::info!("completed benchmark in {:?}", now.elapsed());
 }

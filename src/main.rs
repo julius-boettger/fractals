@@ -2,21 +2,40 @@ mod curves;
 mod rendering;
 mod benchmark;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(version, about)]
 struct Args {
-    /// Run CPU benchmark
-    #[arg(short, long)]
-    bench: bool,
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Run CPU/memory benchmark by computing the triangles necessary
+    /// to represent a given fractal iteration (without rendering it)
+    Bench {
+        /// Iteration to compute, 1 meaning the initial state
+        #[arg(
+            short, long,
+            default_value_t = 10,
+            value_parser = clap::value_parser!(i8).range(1..)
+        )]
+        iteration: i8,
+        #[arg(
+            short, long, value_enum,
+            default_value_t = curves::Curves::default(),
+        )]
+        r#type: curves::Curves
+    },
 }
 
 fn main() {
-    if Args::parse().bench {
-        benchmark::run();
-    } else {
-        rendering::run();
+    match Args::parse().command {
+        Some(Command::Bench { iteration, r#type })
+            => benchmark::run(iteration.try_into().unwrap(), r#type),
+        None => rendering::run(),
     }
 }
 
