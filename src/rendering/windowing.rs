@@ -10,6 +10,25 @@ use winit::{
 use super::state::State;
 use crate::curves::{Curve, Curves, canopy::Canopy};
 
+fn check_memory() {
+    // fire-and-forget thread to not block main thread
+    std::thread::spawn(|| {
+        let mut system = sysinfo::System::new_all();
+        system.refresh_memory();
+
+        #[allow(clippy::cast_precision_loss)]
+        if let Some(process) = system.process(sysinfo::get_current_pid().unwrap()) {
+            let used = process.memory() as f32 * 1e-9;
+            if used >= 0.5 {
+                let available = system.available_memory() as f32 * 1e-9;
+                log::info!("using {used:.1} GB RAM, {available:.1} GB are still available");
+            }
+        } else {
+            log::warn!("couldn't determine used/free memory, https://docs.rs/sysinfo does not support your platform");
+        }
+    });
+}
+
 #[derive(Default)]
 struct App {
     state: Option<State>,
@@ -36,8 +55,12 @@ impl ApplicationHandler for App {
         );
 
         let state = pollster::block_on(State::new(window.clone()));
-
         state.set_control_flow(event_loop);
+        self.state = Some(state);
+
+        window.request_redraw();
+
+        check_memory();
 
         // if (probably) profiling: exit here before entering the infinite event loop
         if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
@@ -47,10 +70,6 @@ impl ApplicationHandler for App {
                 std::process::exit(0);
             }
         }
-
-        window.request_redraw();
-
-        self.state = Some(state);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -70,6 +89,7 @@ impl ApplicationHandler for App {
                 ArrowUp => {
                     state.iteration += 1;
                     state.update_buffers();
+                    check_memory();
                 },
                 ArrowDown => {
                     if state.iteration > 0 {
