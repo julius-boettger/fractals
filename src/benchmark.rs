@@ -1,9 +1,11 @@
 use crate::rendering::vertex::{self, VertexFormat};
+use crate::memory_info::MemoryInfo;
 use crate::curves::Curves;
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn run(iteration: usize, curve: Curves) {
     super::log_init("debug");
+    let mut memory_info = MemoryInfo::new();
     let mut curve_instance = curve.new_instance();
     let vertex_format = curve_instance.vertex_format();
 
@@ -18,4 +20,5 @@ pub fn run(iteration: usize, curve: Curves) {
     vertex::index(raw_vertices);
 
     log::info!("completed benchmark in {:?}", now.elapsed());
+    log::info!("used {:.3} GB RAM", memory_info.used());
 }
