@@ -26,7 +26,7 @@ enum Command {
         /// Be careful when increasing this, you will eventually run out of memory.
         #[arg(
             short, long,
-            default_value_t = 10,
+            default_value_t = 11,
             value_parser = clap::value_parser!(i8).range(1..)
         )]
         iteration: i8,
