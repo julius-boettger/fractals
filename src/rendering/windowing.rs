@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
@@ -8,30 +8,28 @@ use winit::{
 };
 
 use super::state::State;
+use crate::memory_info::MemoryInfo;
 use crate::curves::{Curve, Curves, canopy::Canopy};
 
-fn check_memory() {
-    // fire-and-forget thread to not block main thread
-    std::thread::spawn(|| {
-        let mut system = sysinfo::System::new_all();
-        system.refresh_memory();
-
-        #[allow(clippy::cast_precision_loss)]
-        if let Some(process) = system.process(sysinfo::get_current_pid().unwrap()) {
-            let used = process.memory() as f32 * 1e-9;
-            if used >= 0.5 {
-                let available = system.available_memory() as f32 * 1e-9;
-                log::info!("using {used:.1} GB RAM, {available:.1} GB are still available");
-            }
-        } else {
-            log::warn!("couldn't determine used/free memory, https://docs.rs/sysinfo does not support your platform");
-        }
-    });
-}
-
-#[derive(Default)]
 struct App {
     state: Option<State>,
+    memory_info: Arc<Mutex<MemoryInfo>>,
+}
+
+impl App {
+    fn check_memory(&self) {
+        // fire-and-forget thread to not block main thread
+        let memory_info = self.memory_info.clone();
+        std::thread::spawn(move || {
+            let mut memory_info = memory_info.lock().unwrap();
+            let used = memory_info.used();
+            if used >= 0.5 {
+                let available = memory_info.available();
+                drop(memory_info); // unlock mutex when not needed anymore
+                log::info!("using {used:.1} GB RAM, {available:.1} GB are still available");
+            }
+        });
+    }
 }
 
 impl ApplicationHandler for App {
@@ -60,8 +58,6 @@ impl ApplicationHandler for App {
 
         window.request_redraw();
 
-        check_memory();
-
         // if (probably) profiling: exit here before entering the infinite event loop
         if let Ok(value) = std::env::var("CARGO_PROFILE_RELEASE_DEBUG") {
             if value == "true" {
@@ -89,7 +85,7 @@ impl ApplicationHandler for App {
                 ArrowUp => {
                     state.iteration += 1;
                     state.update_buffers();
-                    check_memory();
+                    self.check_memory();
                 },
                 ArrowDown => {
                     if state.iteration > 0 {
@@ -226,6 +222,10 @@ pub fn run_app() {
         Err(e) => panic!("{e:?}")
     };
 
-    let mut app = App::default();
+    let mut app = App {
+        state: None,
+        memory_info: Arc::new(Mutex::new(MemoryInfo::new())),
+    };
+
     event_loop.run_app(&mut app).unwrap();
 }

@@ -1,6 +1,7 @@
 mod curves;
 mod rendering;
 mod benchmark;
+mod memory_info;
 
 use clap::{Parser, Subcommand};
 
